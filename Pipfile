@@ -8,6 +8,7 @@ django = "==3.1.6"
 django-allauth = "==0.43.0"
 channels = "==3.0.3"
 channels-redis = "==3.2.0"
+uvicorn = "==0.13.3"
 
 [dev-packages]
 flake8 = "==3.8.4"
