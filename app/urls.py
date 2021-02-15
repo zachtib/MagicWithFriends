@@ -26,3 +26,7 @@ try:
     print("debug_toolbar loaded")
 except ImportError:
     print("debug_toolbar not installed")
+
+urlpatterns += [
+    path('', include('dashboard.urls')),
+]
