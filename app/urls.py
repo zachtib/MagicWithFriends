@@ -18,17 +18,15 @@ from django.urls import include, path
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('accounts/', include('allauth.urls')),
+    path('drafts/', include('drafts.urls')),
+    path('', include('dashboard.urls')),
 ]
 
 try:
-    # noinspection PyUnresolvedReferences
     import debug_toolbar
-    urlpatterns += [path('__debug__/', include(debug_toolbar.urls)), ]
+
+    urlpatterns.insert(0, path('__debug__/', include(debug_toolbar.urls)))
     print("debug_toolbar loaded")
 except ImportError:
     print("debug_toolbar not installed")
-
-urlpatterns += [
-    path('accounts/', include('allauth.urls')),
-    path('', include('dashboard.urls')),
-]
