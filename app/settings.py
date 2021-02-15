@@ -49,7 +49,10 @@ INSTALLED_APPS = [
 
     'channels',
 
+    'cards',
+    'cubes',
     'dashboard',
+    'drafts',
 ]
 
 try:
