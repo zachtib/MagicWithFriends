@@ -68,9 +68,11 @@ except ImportError:
 # The order of MIDDLEWARE is important. You should include the Debug Toolbar middleware as early as possible
 # in the list. However, it must come after any other middleware that encodes the response’s content, such
 # as GZipMiddleware.
-
-# This is currently empty, but left to provide a place for middleware to be added BEFORE debug_toolbar
-MIDDLEWARE = []
+MIDDLEWARE = [
+    # Simplified static file serving.
+    # https://warehouse.python.org/project/whitenoise/
+    'whitenoise.middleware.WhiteNoiseMiddleware',
+]
 
 if DEBUG_TOOLBAR_AVAILABLE:
     MIDDLEWARE += [
@@ -160,8 +162,18 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
-
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATIC_URL = '/static/'
+
+# Extra places for collectstatic to find static files.
+STATICFILES_DIRS = (
+    os.path.join(BASE_DIR, 'static'),
+)
+
+# Simplified static file serving.
+# https://warehouse.python.org/project/whitenoise/
+
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 AUTHENTICATION_BACKENDS = (
     "django.contrib.auth.backends.ModelBackend",
@@ -173,3 +185,9 @@ SITE_ID = 1
 ACCOUNT_EMAIL_VERIFICATION = 'none'
 
 LOGIN_REDIRECT_URL = 'dashboard'
+
+try:
+    import django_on_heroku
+    django_on_heroku.settings(locals())
+except ImportError:
+    print('django_on_heroku not found')
