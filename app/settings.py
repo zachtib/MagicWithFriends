@@ -173,3 +173,9 @@ SITE_ID = 1
 ACCOUNT_EMAIL_VERIFICATION = 'none'
 
 LOGIN_REDIRECT_URL = 'dashboard'
+
+try:
+    import django_heroku
+    django_heroku.settings(locals())
+except ImportError:
+    pass
