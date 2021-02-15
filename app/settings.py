@@ -9,24 +9,26 @@ https://docs.djangoproject.com/en/3.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.1/ref/settings/
 """
-
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '@a#g@$#5-&n6)kazv5!s_ydd)m$g04wgr#shbbn=a+hg^z78(='
+SECRET_KEY = os.environ.get('SECRET_KEY', 'development_secret_key')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
 ALLOWED_HOSTS = []
 
+INTERNAL_IPS = [
+    '127.0.0.1',
+]
 
 # Application definition
 
@@ -39,7 +41,32 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 ]
 
-MIDDLEWARE = [
+try:
+    import debug_toolbar
+
+    INSTALLED_APPS += ['debug_toolbar', ]
+    DEBUG_TOOLBAR_AVAILABLE = True
+except ImportError:
+    DEBUG_TOOLBAR_AVAILABLE = False
+
+# The MIDDLEWARE statements below are to build a list of middleware with debug_toolbar in the correct position,
+# but only in the event it is installed.
+#
+# From debug_toolbar's documentation:
+#
+# The order of MIDDLEWARE is important. You should include the Debug Toolbar middleware as early as possible
+# in the list. However, it must come after any other middleware that encodes the response’s content, such
+# as GZipMiddleware.
+
+# This is currently empty, but left to provide a place for middleware to be added BEFORE debug_toolbar
+MIDDLEWARE = []
+
+if DEBUG_TOOLBAR_AVAILABLE:
+    MIDDLEWARE += [
+        'debug_toolbar.middleware.DebugToolbarMiddleware',
+    ]
+
+MIDDLEWARE += [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -70,7 +97,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'app.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
 
@@ -80,7 +106,6 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/3.1/ref/settings/#auth-password-validators
@@ -100,7 +125,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/3.1/topics/i18n/
 
@@ -113,7 +137,6 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
