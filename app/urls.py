@@ -21,6 +21,7 @@ urlpatterns = [
 ]
 
 try:
+    # noinspection PyUnresolvedReferences
     import debug_toolbar
     urlpatterns += [path('__debug__/', include(debug_toolbar.urls)), ]
     print("debug_toolbar loaded")
@@ -28,5 +29,6 @@ except ImportError:
     print("debug_toolbar not installed")
 
 urlpatterns += [
+    path('accounts/', include('allauth.urls')),
     path('', include('dashboard.urls')),
 ]
