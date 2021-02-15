@@ -68,9 +68,11 @@ except ImportError:
 # The order of MIDDLEWARE is important. You should include the Debug Toolbar middleware as early as possible
 # in the list. However, it must come after any other middleware that encodes the response’s content, such
 # as GZipMiddleware.
-
-# This is currently empty, but left to provide a place for middleware to be added BEFORE debug_toolbar
-MIDDLEWARE = []
+MIDDLEWARE = [
+    # Simplified static file serving.
+    # https://warehouse.python.org/project/whitenoise/
+    'whitenoise.middleware.WhiteNoiseMiddleware',
+]
 
 if DEBUG_TOOLBAR_AVAILABLE:
     MIDDLEWARE += [
