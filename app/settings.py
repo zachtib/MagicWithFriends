@@ -187,7 +187,7 @@ ACCOUNT_EMAIL_VERIFICATION = 'none'
 LOGIN_REDIRECT_URL = 'dashboard'
 
 try:
-    import django_heroku
-    django_heroku.settings(locals())
+    import django_on_heroku
+    django_on_heroku.settings(locals())
 except ImportError:
-    pass
+    print('django_on_heroku not found')
