@@ -1,3 +1,10 @@
-from django.shortcuts import render
+def cube_detail(request, cube_id):
+    pass
 
-# Create your views here.
+
+def cube_create_draft(request, cube_id):
+    pass
+
+
+def cube_bulk_update(request, cube_id):
+    pass

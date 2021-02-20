@@ -13,12 +13,19 @@ class CubeNotLargeEnoughException(BaseException):
 
 
 class Cube(models.Model):
-    id = models.UUIDField(primary_key=True)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4)
     name = models.CharField(max_length=200)
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
 
     default_pack_count = models.IntegerField(default=3)
     default_pack_size = models.IntegerField(default=15)
+
+    def __str__(self):
+        return self.name
+
+    def get_absolute_url(self):
+        from django.shortcuts import reverse
+        return reverse('cube-detail', args=[self.id])
 
     def generate_packs(self, pack_count=None, pack_size=None) -> List[List[uuid.UUID]]:
         if pack_count is None:

@@ -13,7 +13,12 @@ class Draft(models.Model):
     name = models.CharField(max_length=100)
     current_round = models.IntegerField(default=0)
     max_players = models.IntegerField(default=8)
+    creator = models.ForeignKey(User, null=True, default=None, on_delete=models.SET_NULL)
     cube = models.ForeignKey(Cube, null=True, default=None, on_delete=models.SET_NULL)
+
+    @property
+    def is_started(self):
+        return self.current_round > 0
 
     def __str__(self):
         return self.name
@@ -54,9 +59,14 @@ class Draft(models.Model):
         return True
 
     def is_user_in_draft(self, user: User) -> bool:
-        for seat in self.seats.all():
-            if user == seat.user:
-                return True
+        if self.is_started:
+            for seat in self.seats.all():
+                if user == seat.user:
+                    return True
+        else:
+            for entry in self.entries.all():
+                if user == entry.player:
+                    return True
         return False
 
     def get_seat_for_user(self, user: User) -> Optional['DraftSeat']:

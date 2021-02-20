@@ -1,3 +1,8 @@
 from django.contrib import admin
 
-# Register your models here.
+from cubes.models import Cube
+
+
+@admin.register(Cube)
+class CubeAdmin(admin.ModelAdmin):
+    pass

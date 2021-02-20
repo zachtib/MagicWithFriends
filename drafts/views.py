@@ -23,13 +23,32 @@ def my_drafts(request):
 @login_required
 def draft_detail(request, draft_id: uuid):
     draft = get_object_or_404(Draft, uuid=draft_id)
+    is_owner = draft.creator.id == request.user.id
+    in_draft = not request.user.is_anonymous and draft.is_user_in_draft(request.user)
+    join_url = reverse('join-draft', args=[draft.uuid])
 
-    # join_url = reverse('join-draft', args=[draft.uuid])
-    join_url = ''
-    return render(request, 'drafts/detail.html', {
-        'join_url': join_url,
-        'draft': draft,
-    })
+    if not draft.is_started:
+        return render(request, 'drafts/detail.html', {
+            'is_owner': is_owner,
+            'join_url': join_url,
+            'draft': draft,
+        })
+    else:
+        if not in_draft:
+            return render(request, 'drafts/detail.html', {
+                'is_owner': is_owner,
+                'join_url': join_url,
+                'draft': draft,
+            })
+        seat = draft.get_seat_for_user(request.user)
+        current_pack = seat.get_current_pack()
+        pack_count = seat.get_pack_count()
+        return render(request, 'drafts/pick.html', {
+            'draft': draft,
+            'pack': current_pack,
+            'pack_count': pack_count,
+            'picks': seat.picks
+        })
 
 
 @login_required
