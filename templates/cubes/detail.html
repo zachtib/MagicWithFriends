@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>
+        {{ cube.name }}
+        {% if show_draft_button %}
+            <a class="btn btn-primary" href="{{ draft_url }}">Draft</a>
+        {% endif %}
+    </h1>
+{% endblock %}

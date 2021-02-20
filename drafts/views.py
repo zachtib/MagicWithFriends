@@ -2,7 +2,7 @@ import uuid
 
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
-from django.shortcuts import render, get_object_or_404, reverse
+from django.shortcuts import render, get_object_or_404, reverse, redirect
 
 from .models import Draft, DraftEntry, DraftSeat
 
@@ -26,11 +26,14 @@ def draft_detail(request, draft_id: uuid):
     is_owner = draft.creator.id == request.user.id
     in_draft = not request.user.is_anonymous and draft.is_user_in_draft(request.user)
     join_url = reverse('join-draft', args=[draft.uuid])
+    show_start_button = is_owner and draft.entries.count() > 0
 
     if not draft.is_started:
         return render(request, 'drafts/detail.html', {
             'is_owner': is_owner,
+            'in_draft': in_draft,
             'join_url': join_url,
+            'show_start_button': show_start_button,
             'draft': draft,
         })
     else:
@@ -56,11 +59,13 @@ def draft_join(request, draft_id: uuid):
     draft = get_object_or_404(Draft, uuid=draft_id)
     join_success = draft.join(request.user)
     if join_success:
-        return HttpResponse('OK')
+        return redirect(draft)
     else:
         return HttpResponse('Error')
 
 
 @login_required
 def draft_leave(request, draft_id: uuid):
-    return render(request, '')
+    draft = get_object_or_404(Draft, uuid=draft_id)
+    draft.entries.filter(player=request.user).delete()
+    return redirect(draft)
