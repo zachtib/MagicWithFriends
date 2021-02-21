@@ -6,6 +6,13 @@ from .forms import CubeBulkUpdateForm
 from .models import Cube
 
 
+def cube_list(request):
+    cubes = Cube.objects.filter(owner=request.user)
+    return render(request, 'cubes/list.html', {
+        'cubes': cubes,
+    })
+
+
 def cube_detail(request, cube_id):
     queryset = Cube.objects.prefetch_related('entries__card__card')
     cube = get_object_or_404(queryset, id=cube_id)
