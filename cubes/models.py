@@ -54,3 +54,6 @@ class CubeEntry(models.Model):
     cube = models.ForeignKey(Cube, related_name='entries', on_delete=models.CASCADE)
     card = models.ForeignKey(Printing, related_name='+', on_delete=models.CASCADE)
     count = models.IntegerField(default=1)
+
+    def get_card_name(self):
+        return self.card.card.name

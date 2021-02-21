@@ -1,12 +1,15 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 
+from cards.models import Card
 from drafts.models import Draft
+from .forms import CubeBulkUpdateForm
 from .models import Cube
 
 
 def cube_detail(request, cube_id):
-    cube = get_object_or_404(Cube, id=cube_id)
+    queryset = Cube.objects.prefetch_related('entries__card__card')
+    cube = get_object_or_404(queryset, id=cube_id)
     show_draft_button = not request.user.is_anonymous
     draft_url = reverse('cube-create-draft', args=[cube.id])
     return render(request, 'cubes/detail.html', {
@@ -27,4 +30,20 @@ def cube_create_draft(request, cube_id):
 
 
 def cube_bulk_update(request, cube_id):
-    pass
+    cube = get_object_or_404(Cube, id=cube_id)
+    if request.method == 'POST':
+        form = CubeBulkUpdateForm(request.POST)
+        if form.is_valid():
+            content = form.cleaned_data['bulk_content']
+            lines = content.split('\n')
+            cube.entries.all().delete()
+            for line in lines:
+                printing = Card.objects.get_or_create_printing_for_name(line)
+                cube.entries.create(card=printing, count=1)
+            return redirect(cube)
+    else:
+        form = CubeBulkUpdateForm()
+    return render(request, 'cubes/update.html', {
+        'cube': cube,
+        'form': form,
+    })

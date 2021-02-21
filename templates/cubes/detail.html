@@ -7,4 +7,8 @@
             <a class="btn btn-primary" href="{{ draft_url }}">Draft</a>
         {% endif %}
     </h1>
+
+    {% for entry in cube.entries.all %}
+        <p>{{ entry.get_card_name }}</p>
+    {% endfor %}
 {% endblock %}
