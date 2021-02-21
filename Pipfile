@@ -20,6 +20,7 @@ flake8 = "==3.8.4"
 coverage = "==5.3.1"
 pytest = "==6.2.1"
 django-debug-toolbar = "==3.2"
+responses = "==0.12.1"
 
 [requires]
 python_version = "3.9"
