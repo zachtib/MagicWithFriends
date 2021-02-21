@@ -223,7 +223,7 @@ class CubeDraftTestCase(TestCase):
         self.cube.default_pack_size = 5
         self.draft = Draft.objects.create(name='Test Draft', creator=self.owner, cube=self.cube, max_players=4)
 
-    def test_draft_starting(self):
+    def test_draft_starting_generates_packs(self):
         self.draft.join(self.owner)
         self.draft.begin()
         self.assertEqual(0, self.draft.entries.count())

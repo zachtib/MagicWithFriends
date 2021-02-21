@@ -78,3 +78,11 @@ def draft_start(request, draft_id: uuid):
         return redirect(draft)
     draft.begin()
     return redirect(draft)
+
+
+@login_required
+def draft_pick(request, draft_id, card_id):
+    draft = get_object_or_404(Draft, uuid=draft_id)
+    seat = draft.get_seat_for_user(request.user)
+    seat.make_selection(card_id)
+    return redirect(draft)

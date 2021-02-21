@@ -24,6 +24,7 @@ def cube_create_draft(request, cube_id):
         name=f'Draft of {cube.name}',
         creator=request.user,
         cube=cube,
+        max_players=4
     )
     return redirect(new_draft)
 

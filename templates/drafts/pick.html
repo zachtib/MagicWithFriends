@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>{{ draft.name }}</h1>
+    {% if draft.cube %}
+        <h3>Cube: {{ draft.cube.name }}</h3>
+    {% endif %}
+    {% for seat in draft.seats.all %}
+        <p>{{ seat }}</p>
+    {% endfor %}
+    {% if pack %}
+        <p>Showing pack 1 of {{ pack_count }}</p>
+        {% for card in pack.cards.all %}
+            <a href="{% url 'draft-pick' draft.uuid card.uuid %}">
+                <p>{{ card.display_name }}</p>
+            </a>
+        {% endfor %}
+    {% endif %}
+    <p>Your Picks:</p>
+    {% for pick in picks.all %}
+        <p>{{ pick.display_name }}</p>
+    {% endfor %}
+{% endblock %}

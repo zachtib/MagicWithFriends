@@ -5,6 +5,7 @@ from typing import Optional, List
 from django.contrib.auth.models import User
 from django.db import models
 
+from cards.models import Card
 from cubes.models import Cube
 
 
@@ -61,6 +62,7 @@ class Draft(models.Model):
                         DraftCard.objects.create(pack=pack, card_uuid=card_id)
 
         self.current_round = 1
+        self.save()
         return True
 
     def is_user_in_draft(self, user: User) -> bool:
@@ -152,3 +154,10 @@ class DraftCard(models.Model):
     seat = models.ForeignKey(DraftSeat, null=True, default=None, on_delete=models.CASCADE, related_name='picks')
     card_name = models.CharField(max_length=20, null=True, default=None)
     card_uuid = models.UUIDField(null=True, default=None)
+
+    def display_name(self):
+        if self.card_name is not None:
+            return self.card_name
+        if self.card_uuid is not None:
+            return Card.objects.get(id=self.card_uuid).name
+        return 'None'
