@@ -198,6 +198,8 @@ class DraftProgressTestCase(TestCase):
 
     def test_making_a_selection_in_even_round_passes_right(self):
         self.draft.current_round = 2
+        self.pack_a.round_number = 2
+        self.pack_a.save()
         pack_id = self.pack_a.id
         card_id = self.pack_a.cards.get(card_name='Dolor').uuid
         self.seat_a.make_selection(card_id)

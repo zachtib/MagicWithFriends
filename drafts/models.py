@@ -82,6 +82,9 @@ class Draft(models.Model):
         except DraftSeat.DoesNotExist:
             return None
 
+    def make_all_bot_selections(self):
+        seats = self.seats.filter(user=None)
+
 
 class DraftEntry(models.Model):
     """
@@ -106,11 +109,15 @@ class DraftSeat(models.Model):
             seat_name = self.user.username
         return f'Seat #{self.position} of {self.draft}: {seat_name}'
 
+    def get_waiting_packs(self):
+        return self.draft.packs.filter(seat_number=self.position,
+                                       round_number=self.draft.current_round)
+
     def get_pack_count(self) -> int:
-        return self.draft.packs.filter(seat_number=self.position).count()
+        return self.get_waiting_packs().count()
 
     def get_current_pack(self) -> Optional['DraftPack']:
-        packs = self.draft.packs.filter(seat_number=self.position).order_by('pick_number')
+        packs = self.get_waiting_packs().order_by('pick_number')
         if packs.count() == 0:
             return None
         return packs[0]
