@@ -1,6 +1,7 @@
 from django.contrib.auth.models import User
 from django.test import TestCase
 
+from cubes.models import Cube
 from drafts.models import Draft, DraftSeat, DraftEntry, DraftPack, DraftCard
 
 
@@ -211,3 +212,21 @@ class DraftProgressTestCase(TestCase):
         self.assertEqual(0, DraftCard.objects.count())
         self.assertEqual(0, DraftSeat.objects.count())
         self.assertEqual(0, DraftEntry.objects.count())
+
+
+class CubeDraftTestCase(TestCase):
+    def setUp(self) -> None:
+        self.owner = User.objects.create_user("cubeowner")
+        self.cube = Cube.objects.create(name='Test Cube', owner=self.owner)
+        from cubes.tests import sample_data
+        self.cube.bulk_update(sample_data)
+        self.cube.default_pack_size = 5
+        self.draft = Draft.objects.create(name='Test Draft', creator=self.owner, cube=self.cube, max_players=4)
+
+    def test_draft_starting(self):
+        self.draft.join(self.owner)
+        self.draft.begin()
+        self.assertEqual(0, self.draft.entries.count())
+        for seat in self.draft.seats.all():
+            count = DraftPack.objects.filter(seat_number=seat.position).count()
+            self.assertEqual(3, count)

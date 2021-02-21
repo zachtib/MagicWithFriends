@@ -7,6 +7,7 @@ urlpatterns = [
     path('<uuid:draft_id>/', include([
         path('join', views.draft_join, name='join-draft'),
         path('leave', views.draft_leave, name='leave-draft'),
+        path('start', views.draft_start, name='start-draft'),
         path('', views.draft_detail, name='draft-detail'),
     ])),
 ]

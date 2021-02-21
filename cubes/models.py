@@ -5,7 +5,7 @@ from typing import List
 from django.contrib.auth.models import User
 from django.db import models
 
-from cards.models import Printing
+from cards.models import Printing, Card
 
 
 class CubeNotLargeEnoughException(BaseException):
@@ -27,6 +27,15 @@ class Cube(models.Model):
         from django.shortcuts import reverse
         return reverse('cube-detail', args=[self.id])
 
+    def bulk_update(self, card_names):
+        self.entries.all().delete()
+        for card_name in card_names:
+            printing = Card.objects.get_or_create_printing_for_name(card_name)
+            self.entries.create(card=printing, count=1)
+
+    def calculate_size(self) -> int:
+        return sum(self.entries.values_list('count', flat=True))
+
     def generate_packs(self, pack_count=None, pack_size=None) -> List[List[uuid.UUID]]:
         if pack_count is None:
             pack_count = self.default_pack_count
@@ -34,13 +43,13 @@ class Cube(models.Model):
             pack_size = self.default_pack_size
         packs = []
         total_requested_cards = pack_count * pack_size
-        cube_size = self.entries.annotate(card_count=models.Sum('count')).get('card_count', 0)
+        cube_size = self.calculate_size()
         if total_requested_cards > cube_size:
             raise CubeNotLargeEnoughException()
         card_pool = []
         for entry in self.entries.all():
             for _ in range(entry.count):
-                card_pool.append(entry.card.id)
+                card_pool.append(entry.card.card.id)
         shuffle(card_pool)
         for _ in range(pack_count):
             pack = []

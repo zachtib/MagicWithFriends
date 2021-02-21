@@ -49,11 +49,16 @@ class Draft(models.Model):
         for seat, player in enumerate(players):
             DraftSeat.objects.create(draft=self, user=player, position=seat)
         self.entries.all().delete()
+
         if self.cube is not None:
-            packs = self.cube.generate_packs()
+            packs_needed = self.cube.default_pack_count * len(players)
+            packs = self.cube.generate_packs(pack_count=packs_needed)
             for seat in self.seats.all():
                 for i in range(1, self.cube.default_pack_count + 1):
+                    card_ids = packs.pop()
                     pack = DraftPack.objects.create(draft=self, round_number=i, seat_number=seat.position)
+                    for card_id in card_ids:
+                        DraftCard.objects.create(pack=pack, card_uuid=card_id)
 
         self.current_round = 1
         return True
@@ -142,7 +147,8 @@ class DraftPack(models.Model):
 
 
 class DraftCard(models.Model):
-    uuid = models.UUIDField(db_index=True, default=uuid.uuid4)
+    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
     pack = models.ForeignKey(DraftPack, null=True, on_delete=models.CASCADE, related_name='cards')
     seat = models.ForeignKey(DraftSeat, null=True, default=None, on_delete=models.CASCADE, related_name='picks')
-    card_name = models.CharField(max_length=20)
+    card_name = models.CharField(max_length=20, null=True, default=None)
+    card_uuid = models.UUIDField(null=True, default=None)

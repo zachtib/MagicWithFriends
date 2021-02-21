@@ -69,3 +69,12 @@ def draft_leave(request, draft_id: uuid):
     draft = get_object_or_404(Draft, uuid=draft_id)
     draft.entries.filter(player=request.user).delete()
     return redirect(draft)
+
+
+@login_required
+def draft_start(request, draft_id: uuid):
+    draft = get_object_or_404(Draft, uuid=draft_id)
+    if draft.creator.id != request.user.id:
+        return redirect(draft)
+    draft.begin()
+    return redirect(draft)

@@ -1,7 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 
-from cards.models import Card
 from drafts.models import Draft
 from .forms import CubeBulkUpdateForm
 from .models import Cube
@@ -36,10 +35,7 @@ def cube_bulk_update(request, cube_id):
         if form.is_valid():
             content = form.cleaned_data['bulk_content']
             lines = content.split('\n')
-            cube.entries.all().delete()
-            for line in lines:
-                printing = Card.objects.get_or_create_printing_for_name(line)
-                cube.entries.create(card=printing, count=1)
+            cube.bulk_update(lines)
             return redirect(cube)
     else:
         form = CubeBulkUpdateForm()

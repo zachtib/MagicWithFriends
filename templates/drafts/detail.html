@@ -19,6 +19,6 @@
         {% endfor %}
     {% endif %}
     {% if show_start_button %}
-        <a class="btn btn-primary">Start</a>
+        <a class="btn btn-primary" href="{% url 'start-draft' draft.uuid %}">Start</a>
     {% endif %}
 {% endblock %}
