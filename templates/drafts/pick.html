@@ -3,20 +3,26 @@
 {% block content %}
     <h1>{{ draft.name }}</h1>
     {% if draft.cube %}
-        <h3>Cube: {{ draft.cube.name }}</h3>
+        <h3>Cube: <a href="{{ draft.cube.get_absolute_url }}">{{ draft.cube.name }}</a></h3>
     {% endif %}
-    {% for seat in draft.seats.all %}
-        <p>{{ seat }}</p>
-    {% endfor %}
-    {% if pack %}
-        <p>Showing pack 1 of {{ pack_count }}</p>
-        {% for card in pack.cards.all %}
-            <a href="{% url 'draft-pick' draft.uuid card.uuid %}">
-                <p>{{ card.display_name }}</p>
-            </a>
-        {% endfor %}
+    <p>
+        Seats: {{ seats|join:"," }}
+    </p>
+
+    {% if is_complete %}
+        <h4>Draft completed!</h4>
     {% else %}
-        <p>No current pack</p>
+        <p>Round {{ draft.current_round }} of {{ total_rounds }}</p>
+        {% if pack %}
+            <p>Showing pack 1 of {{ pack_count }}</p>
+            {% for card in pack.cards.all %}
+                <a href="{% url 'draft-pick' draft.uuid card.uuid %}">
+                    <p>{{ card.display_name }}</p>
+                </a>
+            {% endfor %}
+        {% else %}
+            <p>No current pack</p>
+        {% endif %}
     {% endif %}
     <p>Your Picks:</p>
     {% for pick in picks.all %}

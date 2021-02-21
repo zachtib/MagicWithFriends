@@ -232,3 +232,23 @@ class CubeDraftTestCase(TestCase):
         for seat in self.draft.seats.all():
             count = DraftPack.objects.filter(seat_number=seat.position).count()
             self.assertEqual(3, count)
+
+
+class BotDraftTestCase(TestCase):
+    def setUp(self) -> None:
+        self.owner = User.objects.create_user("cubeowner")
+        self.cube = Cube.objects.create(name='Test Cube', owner=self.owner)
+        from cubes.tests import sample_data
+        self.cube.bulk_update(sample_data)
+        self.cube.default_pack_size = 5
+        self.draft = Draft.objects.create(name='Test Draft', creator=self.owner, cube=self.cube, max_players=4)
+        self.draft.max_players = 4
+        self.draft.save()
+
+    def test_bot_making_selections(self):
+        self.draft.join(self.owner)
+        self.draft.begin()
+        self.draft.make_all_bot_selections()
+
+        owner_seat = self.draft.get_seat_for_user(self.owner)
+        self.assertEqual(4, owner_seat.get_pack_count())

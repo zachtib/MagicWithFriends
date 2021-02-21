@@ -46,11 +46,16 @@ def draft_detail(request, draft_id: uuid):
         seat = draft.get_seat_for_user(request.user)
         current_pack = seat.get_current_pack()
         pack_count = seat.get_pack_count()
+        is_complete = draft.current_round > 3
+        seats = [seat.short_display_name() for seat in draft.seats.order_by('position')]
         return render(request, 'drafts/pick.html', {
             'draft': draft,
             'pack': current_pack,
             'pack_count': pack_count,
-            'picks': seat.picks
+            'picks': seat.picks,
+            'total_rounds': 3,
+            'is_complete': is_complete,
+            'seats': seats,
         })
 
 
@@ -84,5 +89,6 @@ def draft_start(request, draft_id: uuid):
 def draft_pick(request, draft_id, card_id):
     draft = get_object_or_404(Draft, uuid=draft_id)
     seat = draft.get_seat_for_user(request.user)
-    seat.make_selection(card_id)
+    if seat.make_selection(card_id):
+        draft.heartbeat()
     return redirect(draft)

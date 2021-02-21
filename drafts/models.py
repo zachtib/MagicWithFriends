@@ -1,5 +1,5 @@
+import random
 import uuid
-from random import shuffle
 from typing import Optional, List
 
 from django.contrib.auth.models import User
@@ -46,7 +46,7 @@ class Draft(models.Model):
         if add_bots:
             while len(players) < self.max_players:
                 players.append(None)
-        shuffle(players)
+        random.shuffle(players)
         for seat, player in enumerate(players):
             DraftSeat.objects.create(draft=self, user=player, position=seat)
         self.entries.all().delete()
@@ -82,8 +82,34 @@ class Draft(models.Model):
         except DraftSeat.DoesNotExist:
             return None
 
+    def heartbeat(self):
+        self.make_all_bot_selections()
+        self.check_end_of_round()
+
+    def check_end_of_round(self):
+        for pack in self.packs.filter(round_number=self.current_round):
+            if pack.cards.count() > 0:
+                return False
+        self.current_round += 1
+        self.save()
+        return True
+
     def make_all_bot_selections(self):
         seats = self.seats.filter(user=None)
+        # Odd rounds pass left (inc)
+        if self.current_round % 2 == 1:
+            seats = seats.order_by('position')
+        else:
+            seats = seats.order_by('-position')
+        for _ in range(self.max_players):
+            for seat in seats.all():
+                packs = seat.get_waiting_packs()
+                for pack in packs.all():
+                    ids = list(pack.cards.values_list('uuid', flat=True))
+                    if len(ids) > 0:
+                        card_id = random.choice(ids)
+                        if not seat.make_selection(card_id=card_id):
+                            raise Exception()
 
 
 class DraftEntry(models.Model):
@@ -102,6 +128,12 @@ class DraftSeat(models.Model):
     user = models.ForeignKey(User, null=True, on_delete=models.SET_NULL)
     position = models.IntegerField()
 
+    def short_display_name(self):
+        if self.user is None:
+            return 'Bot'
+        else:
+            return self.user.username
+
     def __str__(self):
         if self.user is None:
             seat_name = 'Bot'
@@ -110,20 +142,23 @@ class DraftSeat(models.Model):
         return f'Seat #{self.position} of {self.draft}: {seat_name}'
 
     def get_waiting_packs(self):
-        return self.draft.packs.filter(seat_number=self.position,
-                                       round_number=self.draft.current_round)
+        return self.draft.packs.filter(
+            seat_number=self.position,
+            round_number=self.draft.current_round
+        ).order_by('pick_number')
 
     def get_pack_count(self) -> int:
         return self.get_waiting_packs().count()
 
     def get_current_pack(self) -> Optional['DraftPack']:
-        packs = self.get_waiting_packs().order_by('pick_number')
+        packs = self.get_waiting_packs()
         if packs.count() == 0:
             return None
         return packs[0]
 
-    def make_selection(self, card_id: str) -> bool:
-        current_pack = self.get_current_pack()
+    def make_selection(self, card_id: str, current_pack: Optional['DraftPack'] = None) -> bool:
+        if current_pack is None:
+            current_pack = self.get_current_pack()
         if current_pack is None:
             return False
         try:
