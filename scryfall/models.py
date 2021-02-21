@@ -52,6 +52,9 @@ class ScryfallCard:
     scryfall_uri: str
     layout: str
     type_line: str
+    set: str
+    set_name: str
+    set_uri: str
     card_faces: List[ScryfallCardFace] = field(default_factory=list)
     color_indicator: List[str] = field(default_factory=list)
     loyalty: Optional[str] = None

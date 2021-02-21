@@ -27,10 +27,13 @@ class Cube(models.Model):
         from django.shortcuts import reverse
         return reverse('cube-detail', args=[self.id])
 
-    def bulk_update(self, card_names):
+    def bulk_update(self, card_names, fetch=False):
         self.entries.all().delete()
         for card_name in card_names:
-            printing = Card.objects.get_or_create_printing_for_name(card_name)
+            if fetch:
+                printing = Card.objects.get_or_fetch_printing_for_name(card_name)
+            else:
+                printing = Card.objects.get_or_create_printing_for_name(card_name)
             self.entries.create(card=printing, count=1)
 
     def calculate_size(self) -> int:

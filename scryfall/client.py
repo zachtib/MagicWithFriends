@@ -49,6 +49,10 @@ class ScryfallClient(object):
     def get_sets(self) -> List[ScryfallSet]:
         return self.fetch_many(ScryfallSet, '/sets')
 
+    def get_card_by_name_fuzzy(self, name: str) -> ScryfallCard:
+        name = name.replace(' ', '+')
+        return self.fetch_one(ScryfallCard, f'/cards/named?fuzzy={name}')
+
     def get_cards_for_set_code(self, code) -> List[ScryfallCard]:
         url = f'/cards/search?order=spoiled&q=e={code}&unique=card'
         return self.fetch_many(ScryfallCard, url)
