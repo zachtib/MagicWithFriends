@@ -5,6 +5,9 @@
     <h2>Created by: {{ draft.creator }}</h2>
 
     {% if draft.is_started %}
+        {% for seat in draft.seats.all %}
+            <p>Seat: {{ seat.user }}</p>
+        {% endfor %}
     {% else %}
         {% if not in_draft %}
             <a href="{% url 'join-draft' draft.uuid %}">Join</a>
