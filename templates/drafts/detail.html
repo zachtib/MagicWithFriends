@@ -5,7 +5,8 @@
     <h2>Created by: {{ draft.creator }}</h2>
 
     {% if draft.is_started %}
-        {% else %}{% if not in_draft %}
+    {% else %}
+        {% if not in_draft %}
             <a href="{% url 'join-draft' draft.uuid %}">Join</a>
         {% else %}
             <a href="{% url 'leave-draft' draft.uuid %}">Leave</a>
