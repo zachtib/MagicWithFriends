@@ -49,26 +49,10 @@ class ScryfallClient(object):
     def get_sets(self) -> List[ScryfallSet]:
         return self.fetch_many(ScryfallSet, '/sets')
 
+    def get_card_by_name_fuzzy(self, name: str) -> ScryfallCard:
+        name = name.replace(' ', '+').lower()
+        return self.fetch_one(ScryfallCard, f'/cards/named?fuzzy={name}')
+
     def get_cards_for_set_code(self, code) -> List[ScryfallCard]:
         url = f'/cards/search?order=spoiled&q=e={code}&unique=card'
         return self.fetch_many(ScryfallCard, url)
-
-    def __scryfall_request(self, url, mapper):
-        result = list()
-        response = requests.get(self.expand_url(url))
-        if response.status_code != 200:
-            # TODO: Log a warning here
-            return result
-        json = response.json()
-        data = json['data']
-        for item in data:
-            result_object = mapper(item)
-            result.append(result_object)
-        return result
-
-    def get_all_sets(self) -> List[ScryfallSet]:
-        return self.__scryfall_request('/sets', ScryfallSet.from_dict)
-
-    def get_all_cards_for_set_code(self, code) -> List[ScryfallCard]:
-        url = f'/cards/search?order=spoiled&q=e={code}&unique=card'
-        return self.__scryfall_request(url, ScryfallCard.from_dict)

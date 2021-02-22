@@ -41,8 +41,8 @@ def cube_bulk_update(request, cube_id):
         form = CubeBulkUpdateForm(request.POST)
         if form.is_valid():
             content = form.cleaned_data['bulk_content']
-            lines = content.split('\n')
-            cube.bulk_update(lines)
+            lines = content.splitlines()
+            cube.bulk_update(lines, fetch=True)
             return redirect(cube)
     else:
         form = CubeBulkUpdateForm()

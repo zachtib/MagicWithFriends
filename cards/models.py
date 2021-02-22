@@ -2,8 +2,47 @@ import uuid
 
 from django.db import models
 
+from scryfall.client import ScryfallClient
+from scryfall.models import ScryfallCard
+
 
 class CardManager(models.Manager):
+
+    def __init__(self):
+        super().__init__()
+        self.scryfall = ScryfallClient()
+
+    def from_scryfall_card(self, card: ScryfallCard) -> 'Card':
+        return Card.objects.create(
+            id=card.id,
+            name=card.name,
+            mana_cost=card.mana_cost
+        )
+
+    def get_or_fetch_printing_for_name(self, name: str):
+        queryset = self.get_queryset()
+        try:
+            card = queryset.get(name__iexact=name)
+            printing = card.printings.first()
+            if printing is not None:
+                return printing
+        except Card.DoesNotExist:
+            card = None
+        #  Card doesn't exist in our database, let's fetch it
+        scryfall_card = self.scryfall.get_card_by_name_fuzzy(name)
+        if card is None:
+            card = self.from_scryfall_card(scryfall_card)
+        s = scryfall_card.set_uri
+        set_id = s[s.rindex('/') + 1:]
+        magic_set, created = MagicSet.objects.get_or_create(code=scryfall_card.set, defaults={
+            'name': scryfall_card.set_name,
+            'id': set_id,
+        })
+        printing = Printing.objects.create(
+            magic_set=magic_set,
+            card=card,
+        )
+        return printing
 
     def get_or_create_printing_for_name(self, name):
         queryset = self.get_queryset()
