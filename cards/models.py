@@ -41,6 +41,7 @@ class CardManager(models.Manager):
         printing = Printing.objects.create(
             magic_set=magic_set,
             card=card,
+            image_url=scryfall_card.image_uris.normal
         )
         return printing
 
@@ -97,6 +98,7 @@ class CardFace(models.Model):
 class Printing(models.Model):
     magic_set = models.ForeignKey(MagicSet, on_delete=models.CASCADE, related_name='printings')
     card = models.ForeignKey(Card, related_name='printings', on_delete=models.CASCADE)
+    image_url = models.URLField()
 
     def __str__(self):
         return f'{self.card.name} in {self.magic_set.name}'
