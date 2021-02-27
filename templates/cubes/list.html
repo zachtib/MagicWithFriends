@@ -1,1 +1,9 @@
 {% extends "base.html" %}
+
+{% block content %}
+
+    {% for cube in cubes %}
+        <p><a href="{{ cube.get_absolute_url }}">{{ cube }}</a></p>
+    {% endfor %}
+
+{% endblock %}

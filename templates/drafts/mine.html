@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+
+{% block content %}
+    {% for seat in seats %}
+        <p><a href="{{ seat.draft.get_absolute_url }}">{{ seat }}</a></p>
+    {% endfor %}
+    {% for entry in entries %}
+        <p><a href="{{ entry.draft.get_absolute_url }}">{{ entry }}</a></p>
+    {% endfor %}
+{% endblock %}
