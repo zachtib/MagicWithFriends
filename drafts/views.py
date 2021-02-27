@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 from django.shortcuts import render, get_object_or_404, reverse, redirect
 
+from core.http import inspectable_redirect
 from .models import Draft, DraftEntry, DraftSeat
 
 
@@ -91,4 +92,4 @@ def draft_pick(request, draft_id, card_id):
     seat = draft.get_seat_for_user(request.user)
     if seat.make_selection(card_id):
         draft.heartbeat()
-    return redirect(draft)
+    return inspectable_redirect(request, draft)

@@ -101,15 +101,15 @@ class Draft(models.Model):
             seats = seats.order_by('position')
         else:
             seats = seats.order_by('-position')
-        for _ in range(self.max_players):
-            for seat in seats.all():
-                packs = seat.get_waiting_packs()
-                for pack in packs.all():
-                    ids = list(pack.cards.values_list('uuid', flat=True))
-                    if len(ids) > 0:
-                        card_id = random.choice(ids)
-                        if not seat.make_selection(card_id=card_id):
-                            raise Exception()
+        all_packs = self.packs.prefetch_related('cards').all()
+        for seat in seats.all():
+            filtered_packs = [pack for pack in all_packs if pack.seat_number == seat.position]
+            for pack in filtered_packs:
+                ids = list(pack.cards.values_list('uuid', flat=True))
+                if len(ids) > 0:
+                    card_id = random.choice(ids)
+                    if not seat.make_selection(card_id=card_id, current_pack=pack):
+                        raise Exception()
 
 
 class DraftEntry(models.Model):
