@@ -97,13 +97,10 @@ class Draft(models.Model):
     def make_all_bot_selections(self):
         seats = self.seats.filter(user=None)
         all_packs = self.packs.prefetch_related('cards').all()
-        should_continue = True
-        while should_continue:
-            should_continue = False
+        for _ in range(seats.count()):
             for seat in seats.all():
                 filtered_packs = [pack for pack in all_packs if pack.seat_number == seat.position]
                 for pack in filtered_packs:
-                    should_continue = True
                     ids = list(pack.cards.values_list('uuid', flat=True))
                     if len(ids) > 0:
                         card_id = random.choice(ids)
