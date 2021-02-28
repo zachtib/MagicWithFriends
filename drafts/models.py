@@ -96,20 +96,19 @@ class Draft(models.Model):
 
     def make_all_bot_selections(self):
         seats = self.seats.filter(user=None)
-        # Odd rounds pass left (inc)
-        if self.current_round % 2 == 1:
-            seats = seats.order_by('position')
-        else:
-            seats = seats.order_by('-position')
         all_packs = self.packs.prefetch_related('cards').all()
-        for seat in seats.all():
-            filtered_packs = [pack for pack in all_packs if pack.seat_number == seat.position]
-            for pack in filtered_packs:
-                ids = list(pack.cards.values_list('uuid', flat=True))
-                if len(ids) > 0:
-                    card_id = random.choice(ids)
-                    if not seat.make_selection(card_id=card_id, current_pack=pack):
-                        raise Exception()
+        should_continue = True
+        while should_continue:
+            should_continue = False
+            for seat in seats.all():
+                filtered_packs = [pack for pack in all_packs if pack.seat_number == seat.position]
+                for pack in filtered_packs:
+                    should_continue = True
+                    ids = list(pack.cards.values_list('uuid', flat=True))
+                    if len(ids) > 0:
+                        card_id = random.choice(ids)
+                        if not seat.make_selection(card_id=card_id, current_pack=pack):
+                            raise Exception()
 
 
 class DraftEntry(models.Model):
