@@ -5,7 +5,7 @@ from typing import Optional, List
 from django.contrib.auth.models import User
 from django.db import models
 
-from cards.models import Card
+from cards.models import Card, Printing
 from cubes.models import Cube
 
 
@@ -194,12 +194,33 @@ class DraftCard(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
     pack = models.ForeignKey(DraftPack, null=True, on_delete=models.CASCADE, related_name='cards')
     seat = models.ForeignKey(DraftSeat, null=True, default=None, on_delete=models.CASCADE, related_name='picks')
+    card = models.ForeignKey(Card, on_delete=models.SET_NULL, null=True)
+    printing = models.ForeignKey(Printing, on_delete=models.SET_NULL, null=True)
+
     card_name = models.CharField(max_length=20, null=True, default=None)
     card_uuid = models.UUIDField(null=True, default=None)
 
+    def get_image_url(self):
+        if self.card is None:
+            if self.card_uuid is None:
+                return None
+            self.card = Card.objects.get(id=self.card_uuid)
+            self.save()
+        if self.printing is None:
+            self.printing = self.card.printings.first()
+            self.save()
+        return self.printing.image_url
+
     def display_name(self):
+        if self.printing is not None:
+            return self.printing.card.name
+        if self.card is not None:
+            return self.card.name
         if self.card_name is not None:
             return self.card_name
         if self.card_uuid is not None:
-            return Card.objects.get(id=self.card_uuid).name
+            self.card = Card.objects.get(id=self.card_uuid)
+            self.printing = self.card.printings.first()
+            self.save()
+            return self.card.name
         return 'None'

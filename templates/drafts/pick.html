@@ -15,11 +15,16 @@
         <p>Round {{ draft.current_round }} of {{ total_rounds }}</p>
         {% if pack %}
             <p>Showing pack 1 of {{ pack_count }}</p>
-            {% for card in pack.cards.all %}
-                <a href="{% url 'draft-pick' draft.uuid card.uuid %}">
-                    <p>{{ card.display_name }}</p>
-                </a>
-            {% endfor %}
+            <div class="row">
+                {% for card in pack.cards.all %}
+                    <div class="col-lg-3 col-md-4 col-sm-6">
+                        <a href="{% url 'draft-pick' draft.uuid card.uuid %}">
+                            <img class="img-responsive" style="width: 100%; height: auto"
+                                 src="{{ card.get_image_url }}">
+                        </a>
+                    </div>
+                {% endfor %}
+            </div>
         {% else %}
             <p>No current pack</p>
         {% endif %}
