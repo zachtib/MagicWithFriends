@@ -172,12 +172,13 @@ class DraftProgressTestCase(TestCase):
         result = self.seat_a.make_selection(card_id)
         self.assertTrue(result)
 
+        # noinspection PyTypeChecker
         with self.assertRaises(DraftPack.DoesNotExist):
             DraftPack.objects.get(id=pack_id, seat_number=self.seat_a.position)
 
-        picks_count = self.seat_a.picks.count()
+        picks_count = self.seat_a.draft_cards.count()
         self.assertEqual(1, picks_count)
-        pick: DraftCard = self.seat_a.picks.all()[0]
+        pick: DraftCard = self.seat_a.draft_cards.all()[0]
         self.assertEqual(card_id, pick.uuid)
 
         pack = DraftPack.objects.get(id=pack_id)

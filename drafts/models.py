@@ -158,6 +158,7 @@ class DraftSeat(models.Model):
         if current_pack is None:
             return False
         try:
+            current_pack: DraftPack = current_pack
             selected_card = current_pack.cards.get(uuid=card_id)
         except DraftCard.DoesNotExist:
             return False
@@ -178,8 +179,19 @@ class DraftSeat(models.Model):
 
         return True
 
+    def seat_to_the_left(self) -> 'DraftSeat':
+        position = (self.position + 1) % self.draft.max_players
+        return self.draft.seats.get(position=position)
+
+    def seat_to_the_right(self) -> 'DraftSeat':
+        position = (self.position - 1) % self.draft.max_players
+        return self.draft.seats.get(position=position)
+
 
 class DraftPack(models.Model):
+    """
+    Deprecated
+    """
     draft = models.ForeignKey(Draft, on_delete=models.CASCADE, related_name='packs')
     round_number = models.IntegerField()
     pick_number = models.IntegerField(default=1)
@@ -187,9 +199,12 @@ class DraftPack(models.Model):
 
 
 class DraftCard(models.Model):
+    """
+    Deprecated
+    """
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
     pack = models.ForeignKey(DraftPack, null=True, on_delete=models.CASCADE, related_name='cards')
-    seat = models.ForeignKey(DraftSeat, null=True, default=None, on_delete=models.CASCADE, related_name='picks')
+    seat = models.ForeignKey(DraftSeat, null=True, default=None, on_delete=models.CASCADE, related_name='draft_cards')
     card = models.ForeignKey(Card, on_delete=models.SET_NULL, null=True)
     printing = models.ForeignKey(Printing, on_delete=models.SET_NULL, null=True)
 
@@ -220,3 +235,47 @@ class DraftCard(models.Model):
             self.save()
             return self.card.name
         return 'None'
+
+
+class Pack(models.Model):
+    seat = models.ForeignKey(DraftSeat, on_delete=models.CASCADE)
+    round = models.IntegerField()
+    pick = models.IntegerField(default=1)
+
+    @property
+    def draft(self) -> Draft:
+        return self.seat.draft
+
+
+class PackEntry(models.Model):
+    pack = models.ForeignKey(Pack, on_delete=models.CASCADE, related_name='entries')
+    printing = models.ForeignKey(Printing, on_delete=models.CASCADE)
+
+    @property
+    def name(self) -> str:
+        return self.printing.card.name
+
+    @property
+    def image_url(self) -> str:
+        return self.printing.image_url
+
+
+class DraftPick(models.Model):
+    seat = models.ForeignKey(DraftSeat, on_delete=models.CASCADE, related_name='picks')
+    printing = models.ForeignKey(Printing, on_delete=models.CASCADE)
+
+    @property
+    def name(self) -> str:
+        return self.printing.card.name
+
+    @property
+    def image_url(self) -> str:
+        return self.printing.image_url
+
+    @property
+    def card(self) -> Card:
+        """
+        Convenience getter for self.printing.card
+        :return: [Card] instance
+        """
+        return self.printing.card
