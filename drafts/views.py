@@ -81,7 +81,7 @@ def draft_start(request, draft_id: uuid):
     if draft.creator.id != request.user.id:
         return redirect(draft)
     draft.begin()
-    return redirect(draft)
+    return inspectable_redirect(request, draft)
 
 
 @login_required

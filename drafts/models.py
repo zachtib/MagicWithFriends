@@ -1,6 +1,6 @@
 import random
 import uuid
-from typing import Optional, List
+from typing import Optional, List, Union
 
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -48,6 +48,7 @@ class Draft(models.Model):
             while len(players) < self.max_players:
                 players.append(None)
         random.shuffle(players)
+        self.seats.all().delete()
         for seat, player in enumerate(players):
             DraftSeat.objects.create(draft=self, user=player, position=seat)
         self.entries.all().delete()
@@ -61,7 +62,7 @@ class Draft(models.Model):
                     card_ids = packs.pop()
                     if settings.ENABLE_NEW_DRAFT_MODELS:
                         pack = Pack.objects.create(seat=seat, round=round_no)
-                        entries = [PackEntry(printing_id) for printing_id in card_ids]
+                        entries = [PackEntry(printing_id=printing_id, pack=pack) for printing_id in card_ids]
                         pack.entries.bulk_create(entries)
                     else:
                         pack = DraftPack.objects.create(draft=self, round_number=round_no, seat_number=seat.position)
@@ -145,45 +146,67 @@ class DraftSeat(models.Model):
         return f'Seat #{self.position} of {self.draft}: {seat_name}'
 
     def get_waiting_packs(self):
-        return self.draft.packs.filter(
-            seat_number=self.position,
-            round_number=self.draft.current_round
-        ).order_by('pick_number')
+        current_round = self.draft.current_round
+        if settings.ENABLE_NEW_DRAFT_MODELS:
+            return self.packs.filter(round=current_round).order_by('pick')
+        else:
+            return self.draft.packs.filter(
+                seat_number=self.position,
+                round_number=current_round
+            ).order_by('pick_number')
 
     def get_pack_count(self) -> int:
         return self.get_waiting_packs().count()
 
-    def get_current_pack(self) -> Optional['DraftPack']:
+    def get_current_pack(self) -> Union['DraftPack', 'Pack', None]:
         packs = self.get_waiting_packs()
         if packs.count() == 0:
             return None
         return packs[0]
 
-    def make_selection(self, card_id: str, current_pack: Optional['DraftPack'] = None) -> bool:
+    def make_selection(self, card_id: str, current_pack: Union['DraftPack', 'Pack', None] = None) -> bool:
         if current_pack is None:
             current_pack = self.get_current_pack()
         if current_pack is None:
             return False
-        try:
-            current_pack: DraftPack = current_pack
-            selected_card = current_pack.cards.get(uuid=card_id)
-        except DraftCard.DoesNotExist:
-            return False
+        if settings.ENABLE_NEW_DRAFT_MODELS:
+            try:
+                current_pack: Pack = current_pack
+                selected_card: PackEntry = current_pack.entries.get(card_id=card_id)
+            except DraftEntry.DoesNotExist:
+                return False
 
-        # Take the card out of its pack and place is in this seat's pool
-        selected_card.pack = None
-        selected_card.seat = self
+            # Take the card out of its pack and place is in this seat's pool
+            self.picks.create(printing=selected_card.printing)
+            selected_card.delete()
+            # Now, move the pack and increment the pick number
+            if self.draft.current_round % 2 == 1:  # Odd rounds pass left (inc)
+                current_pack.seat = self.seat_to_the_left()
+            else:  # Even rounds pass right (decrement seat number)
+                current_pack.seat = self.seat_to_the_right()
+            # Save any relevant models
+            current_pack.save()
+        else:
+            try:
+                current_pack: DraftPack = current_pack
+                selected_card: DraftCard = current_pack.cards.get(uuid=card_id)
+            except DraftCard.DoesNotExist:
+                return False
 
-        # Now, move the pack and increment the pick number
-        if self.draft.current_round % 2 == 1:  # Odd rounds pass left (inc)
-            current_pack.seat_number = (current_pack.seat_number + 1) % self.draft.max_players
-        else:  # Even rounds pass right (decrement seat number)
-            current_pack.seat_number = (current_pack.seat_number - 1) % self.draft.max_players
-        current_pack.pick_number += 1
+            # Take the card out of its pack and place is in this seat's pool
+            selected_card.pack = None
+            selected_card.seat = self
 
-        selected_card.save()
-        current_pack.save()
+            # Now, move the pack and increment the pick number
+            if self.draft.current_round % 2 == 1:  # Odd rounds pass left (inc)
+                current_pack.seat_number = (current_pack.seat_number + 1) % self.draft.max_players
+            else:  # Even rounds pass right (decrement seat number)
+                current_pack.seat_number = (current_pack.seat_number - 1) % self.draft.max_players
+            current_pack.pick_number += 1
 
+            # Save any relevant models
+            selected_card.save()
+            current_pack.save()
         return True
 
     def seat_to_the_left(self) -> 'DraftSeat':
@@ -245,7 +268,7 @@ class DraftCard(models.Model):
 
 
 class Pack(models.Model):
-    seat = models.ForeignKey(DraftSeat, on_delete=models.CASCADE)
+    seat = models.ForeignKey(DraftSeat, on_delete=models.CASCADE, related_name='packs')
     round = models.IntegerField()
     pick = models.IntegerField(default=1)
 
@@ -257,6 +280,12 @@ class Pack(models.Model):
 class PackEntry(models.Model):
     pack = models.ForeignKey(Pack, on_delete=models.CASCADE, related_name='entries')
     printing = models.ForeignKey(Printing, on_delete=models.CASCADE)
+
+    def get_image_url(self):
+        return self.image_url
+
+    def display_name(self):
+        return self.name
 
     @property
     def name(self) -> str:

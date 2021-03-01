@@ -52,7 +52,7 @@ class Cube(models.Model):
             raise CubeNotLargeEnoughException()
         card_pool = []
         entry: CubeEntry
-        for entry in self.entries.all():
+        for entry in self.entries.prefetch_related('printing').all():
             for _ in range(entry.count):
                 if settings.ENABLE_NEW_DRAFT_MODELS:
                     card_pool.append(entry.printing.id)

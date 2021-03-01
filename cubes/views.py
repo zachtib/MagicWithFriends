@@ -14,7 +14,7 @@ def cube_list(request):
 
 
 def cube_detail(request, cube_id):
-    queryset = Cube.objects.prefetch_related('entries__card__card')
+    queryset = Cube.objects.prefetch_related('entries', 'entries__printing', 'entries__printing__card')
     cube = get_object_or_404(queryset, id=cube_id)
     show_draft_button = not request.user.is_anonymous
     draft_url = reverse('cube-create-draft', args=[cube.id])
