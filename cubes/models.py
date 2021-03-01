@@ -2,7 +2,6 @@ import uuid
 from random import shuffle
 from typing import List
 
-from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import models
 
@@ -40,7 +39,7 @@ class Cube(models.Model):
     def calculate_size(self) -> int:
         return sum(self.entries.values_list('count', flat=True))
 
-    def generate_packs(self, pack_count=None, pack_size=None) -> List[List[uuid.UUID]]:
+    def generate_packs(self, pack_count=None, pack_size=None) -> List[List[int]]:
         if pack_count is None:
             pack_count = self.default_pack_count
         if pack_size is None:
@@ -54,10 +53,7 @@ class Cube(models.Model):
         entry: CubeEntry
         for entry in self.entries.prefetch_related('printing').all():
             for _ in range(entry.count):
-                if settings.ENABLE_NEW_DRAFT_MODELS:
-                    card_pool.append(entry.printing.id)
-                else:
-                    card_pool.append(entry.printing.card.id)
+                card_pool.append(entry.printing.id)
         shuffle(card_pool)
         for _ in range(pack_count):
             pack = []

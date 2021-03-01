@@ -1,11 +1,12 @@
+import uuid
 from uuid import UUID
 
 from django.contrib.auth.models import User
-from django.test import TestCase, override_settings
+from django.test import TestCase
 
 from cards.models import Card, Printing, MagicSet
 from cubes.models import Cube
-from drafts.models import Draft, DraftSeat, DraftEntry, DraftPack, DraftCard, Pack, PackEntry, DraftPick
+from drafts.models import Draft, DraftSeat, DraftEntry, Pack, PackEntry, DraftPick
 
 
 class DraftCreationTestCase(TestCase):
@@ -99,6 +100,31 @@ class DraftCreationTestCase(TestCase):
 
 
 class DraftProgressTestCase(TestCase):
+
+    @staticmethod
+    def quick_named_printing(name) -> Printing:
+        """
+        A quick convenience method for generating testing data
+        :return:
+        """
+        card, created = Card.objects.get_or_create(name=name, defaults={
+            'id': uuid.uuid4(),
+        })
+        test_set, _ = MagicSet.objects.get_or_create(code='test', defaults={
+            'id': uuid.uuid4(),
+            'name': 'Testing Set',
+        })
+        if not created:
+            printing = card.printings.first()
+            if printing is not None:
+                return printing
+        printing = Printing.objects.create(
+            card=card,
+            magic_set=test_set,
+            image_url=f'https://example.com/{name}.png'
+        )
+        return printing
+
     def setUp(self) -> None:
         self.draft: Draft = Draft.objects.create(name="Test Draft", max_players=4, current_round=1)
 
@@ -112,14 +138,14 @@ class DraftProgressTestCase(TestCase):
         self.seat_c: DraftSeat = DraftSeat.objects.create(draft=self.draft, user=self.user_c, position=2)
         self.seat_d: DraftSeat = DraftSeat.objects.create(draft=self.draft, user=self.user_d, position=3)
 
-        self.pack_a: DraftPack = DraftPack.objects.create(draft=self.draft,
-                                                          round_number=1,
-                                                          pick_number=1,
-                                                          seat_number=0)
-        self.pack_a.cards.bulk_create([
-            DraftCard(card_name="Lorem Ipsum", pack_id=self.pack_a.id),
-            DraftCard(card_name="Dolor", pack_id=self.pack_a.id),
-            DraftCard(card_name="Sit Amet", pack_id=self.pack_a.id),
+        self.pack_a: Pack = Pack.objects.create(
+            seat=self.seat_a,
+            round=1,
+        )
+        self.pack_a.entries.bulk_create([
+            PackEntry(pack=self.pack_a, printing=self.quick_named_printing('Lorem Ipsum')),
+            PackEntry(pack=self.pack_a, printing=self.quick_named_printing('Dolor')),
+            PackEntry(pack=self.pack_a, printing=self.quick_named_printing('Sit Amet')),
         ])
 
     def test_getting_pack(self):
@@ -136,10 +162,10 @@ class DraftProgressTestCase(TestCase):
         self.assertEqual('Seat #0 of Test Draft: Bot', string)
 
     def test_getting_pack_at_a_seat_with_more_than_one(self):
-        DraftPack.objects.bulk_create([
-            DraftPack(draft=self.draft, round_number=1, seat_number=0, pick_number=2),
-            DraftPack(draft=self.draft, round_number=1, seat_number=0, pick_number=3),
-            DraftPack(draft=self.draft, round_number=1, seat_number=0, pick_number=4),
+        Pack.objects.bulk_create([
+            Pack(seat=self.seat_a, round=1, pick=2),
+            Pack(seat=self.seat_a, round=1, pick=3),
+            Pack(seat=self.seat_a, round=1, pick=4),
         ])
         pack = self.seat_a.get_current_pack()
         self.assertEqual(self.pack_a, pack)
@@ -149,73 +175,72 @@ class DraftProgressTestCase(TestCase):
         self.assertEqual(1, count)
 
     def test_counting_packs_at_a_seat_with_more_than_one(self):
-        DraftPack.objects.bulk_create([
-            DraftPack(draft=self.draft, round_number=1, seat_number=0, pick_number=2),
-            DraftPack(draft=self.draft, round_number=1, seat_number=0, pick_number=3),
-            DraftPack(draft=self.draft, round_number=1, seat_number=0, pick_number=4),
+        Pack.objects.bulk_create([
+            Pack(seat=self.seat_a, round=1, pick=2),
+            Pack(seat=self.seat_a, round=1, pick=3),
+            Pack(seat=self.seat_a, round=1, pick=4),
         ])
         count = self.seat_a.get_pack_count()
         self.assertEqual(4, count)
 
     def test_counting_packs_at_a_seat_with_none(self):
-        self.pack_a.seat_number = 1
+        self.pack_a.seat = self.seat_b
         self.pack_a.save()
         count = self.seat_a.get_pack_count()
         self.assertEqual(0, count)
 
     def test_getting_pack_when_none_at_seat(self):
-        self.pack_a.seat_number = 1
+        self.pack_a.seat = self.seat_b
         self.pack_a.save()
         pack = self.seat_a.get_current_pack()
         self.assertIsNone(pack)
 
     def test_making_a_selection(self):
         pack_id = self.pack_a.id
-        card_id = self.pack_a.cards.get(card_name='Dolor').uuid
-        result = self.seat_a.make_selection(card_id)
+        entry = self.pack_a.entries.get(printing__card__name='Dolor')
+        result = self.seat_a.make_selection(entry.id)
         self.assertTrue(result)
 
         # noinspection PyTypeChecker
-        with self.assertRaises(DraftPack.DoesNotExist):
-            DraftPack.objects.get(id=pack_id, seat_number=self.seat_a.position)
+        with self.assertRaises(Pack.DoesNotExist):
+            self.seat_a.packs.get(id=pack_id)
 
-        picks_count = self.seat_a.draft_cards.count()
+        picks_count = self.seat_a.picks.count()
         self.assertEqual(1, picks_count)
-        pick: DraftCard = self.seat_a.draft_cards.all()[0]
-        self.assertEqual(card_id, pick.uuid)
+        pick: PackEntry = self.seat_a.picks.all()[0]
+        self.assertEqual(entry.printing_id, pick.printing_id)
 
-        pack = DraftPack.objects.get(id=pack_id)
-        self.assertEqual(1, pack.seat_number)
-        self.assertEqual(2, pack.pick_number)
+        pack = Pack.objects.get(id=pack_id)
+        self.assertEqual(1, pack.seat.position)
+        self.assertEqual(2, pack.pick)
 
     def test_making_a_selection_when_no_pack_at_seat(self):
-        self.pack_a.seat_number = 1
+        self.pack_a.seat = self.seat_b
         self.pack_a.save()
-        card_id = DraftCard.objects.get(card_name='Dolor').uuid
+        card_id = PackEntry.objects.get(printing__card__name='Dolor').id
         result = self.seat_a.make_selection(card_id)
         self.assertFalse(result)
 
     def test_making_invalid_selection(self):
-        arbitrary_id = 'cc65092b-385a-494c-a00e-611d6c794f88'
-        result = self.seat_a.make_selection(arbitrary_id)
+        result = self.seat_a.make_selection(123456)
         self.assertFalse(result)
 
     def test_making_a_selection_in_even_round_passes_right(self):
         self.draft.current_round = 2
-        self.pack_a.round_number = 2
+        self.pack_a.round = 2
         self.pack_a.save()
         pack_id = self.pack_a.id
-        card_id = self.pack_a.cards.get(card_name='Dolor').uuid
-        self.seat_a.make_selection(card_id)
-        pack = DraftPack.objects.get(id=pack_id)
-        self.assertEqual(3, pack.seat_number)
+        entry = self.pack_a.entries.get(printing__card__name='Dolor')
+        self.seat_a.make_selection(entry.id)
+        pack = Pack.objects.get(id=pack_id)
+        self.assertEqual(3, pack.seat.position)
 
     def test_deleting_a_started_draft(self):
         self.draft.begin()
         self.draft.delete()
 
-        self.assertEqual(0, DraftPack.objects.count())
-        self.assertEqual(0, DraftCard.objects.count())
+        self.assertEqual(0, Pack.objects.count())
+        self.assertEqual(0, PackEntry.objects.count())
         self.assertEqual(0, DraftSeat.objects.count())
         self.assertEqual(0, DraftEntry.objects.count())
 
@@ -234,7 +259,7 @@ class CubeDraftTestCase(TestCase):
         self.draft.begin()
         self.assertEqual(0, self.draft.entries.count())
         for seat in self.draft.seats.all():
-            count = DraftPack.objects.filter(seat_number=seat.position).count()
+            count = seat.packs.count()
             self.assertEqual(3, count)
 
 
@@ -258,7 +283,6 @@ class BotDraftTestCase(TestCase):
         self.assertEqual(4, owner_seat.get_pack_count())
 
 
-@override_settings(ENABLE_NEW_DRAFT_MODELS=True)
 class NewDraftModelsTestCase(TestCase):
 
     def setUp(self) -> None:
