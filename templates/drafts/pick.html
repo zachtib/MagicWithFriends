@@ -16,11 +16,13 @@
         {% if pack %}
             <p>Showing pack 1 of {{ pack_count }}</p>
             <div class="row">
-                {% for card in pack.cards.all %}
+                {% for entry in pack.entries.all %}
                     <div class="col-lg-3 col-md-4 col-sm-6">
-                        <a href="{% url 'draft-pick' draft.uuid card.uuid %}">
-                            <img class="img-responsive" style="width: 100%; height: auto"
-                                 src="{{ card.get_image_url }}">
+                        <a href="{% url 'draft-pick' draft.uuid entry.id %}">
+                            <img class="img-responsive"
+                                 alt="Pick {{ entry.name }}"
+                                 style="width: 100%; height: auto"
+                                 src="{{ entry.get_image_url }}">
                         </a>
                     </div>
                 {% endfor %}
@@ -31,6 +33,6 @@
     {% endif %}
     <p>Your Picks:</p>
     {% for pick in picks.all %}
-        <p>{{ pick.display_name }}</p>
+        <p>{{ pick.card_name }}</p>
     {% endfor %}
 {% endblock %}

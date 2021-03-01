@@ -1,8 +1,7 @@
 import random
 import uuid
-from typing import Optional, List, Union
+from typing import Optional, List
 
-from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import models
 
@@ -60,14 +59,9 @@ class Draft(models.Model):
                 round_no: int
                 for round_no in range(1, self.cube.default_pack_count + 1):
                     card_ids = packs.pop()
-                    if settings.ENABLE_NEW_DRAFT_MODELS:
-                        pack = Pack.objects.create(seat=seat, round=round_no)
-                        entries = [PackEntry(printing_id=printing_id, pack=pack) for printing_id in card_ids]
-                        pack.entries.bulk_create(entries)
-                    else:
-                        pack = DraftPack.objects.create(draft=self, round_number=round_no, seat_number=seat.position)
-                        for card_id in card_ids:
-                            DraftCard.objects.create(pack=pack, card_uuid=card_id)
+                    pack = Pack.objects.create(seat=seat, round=round_no)
+                    entries = [PackEntry(printing_id=printing_id, pack=pack) for printing_id in card_ids]
+                    pack.entries.bulk_create(entries)
 
         self.current_round = 1
         self.save()
@@ -95,24 +89,26 @@ class Draft(models.Model):
         self.check_end_of_round()
 
     def check_end_of_round(self):
-        for pack in self.packs.filter(round_number=self.current_round):
-            if pack.cards.count() > 0:
-                return False
+        seat: DraftSeat
+        for seat in self.seats.prefetch_related('packs'):
+            pack: Pack
+            for pack in seat.packs.filter(round=self.current_round):
+                if pack.entries.count() > 0:
+                    return False
         self.current_round += 1
         self.save()
         return True
 
     def make_all_bot_selections(self):
-        seats = self.seats.filter(user=None)
-        all_packs = self.packs.prefetch_related('cards').all()
-        for _ in range(seats.count()):
-            for seat in seats.all():
-                filtered_packs = [pack for pack in all_packs if pack.seat_number == seat.position]
-                for pack in filtered_packs:
-                    ids = list(pack.cards.values_list('uuid', flat=True))
+        seats_with_bots = self.seats.prefetch_related('packs__entries__printing').filter(user=None)
+        for _ in range(seats_with_bots.count()):
+            for seat in seats_with_bots.all():
+                pack: Pack
+                for pack in seat.packs.all():
+                    ids = list(pack.entries.values_list('id', flat=True))
                     if len(ids) > 0:
-                        card_id = random.choice(ids)
-                        if not seat.make_selection(card_id=card_id, current_pack=pack):
+                        pick = random.choice(ids)
+                        if not seat.make_selection(pick=pick, current_pack=pack):
                             raise Exception()
 
 
@@ -147,66 +143,41 @@ class DraftSeat(models.Model):
 
     def get_waiting_packs(self):
         current_round = self.draft.current_round
-        if settings.ENABLE_NEW_DRAFT_MODELS:
-            return self.packs.filter(round=current_round).order_by('pick')
-        else:
-            return self.draft.packs.filter(
-                seat_number=self.position,
-                round_number=current_round
-            ).order_by('pick_number')
+        return self.packs.filter(round=current_round).order_by('pick')
 
     def get_pack_count(self) -> int:
         return self.get_waiting_packs().count()
 
-    def get_current_pack(self) -> Union['DraftPack', 'Pack', None]:
+    def get_current_pack(self) -> Optional['Pack']:
         packs = self.get_waiting_packs()
         if packs.count() == 0:
             return None
         return packs[0]
 
-    def make_selection(self, card_id: str, current_pack: Union['DraftPack', 'Pack', None] = None) -> bool:
+    def make_selection(self, pick: int, current_pack: Optional['Pack'] = None) -> bool:
         if current_pack is None:
             current_pack = self.get_current_pack()
-        if current_pack is None:
+            if current_pack is None:
+                return False
+
+        try:
+            current_pack: Pack = current_pack
+            selected_card: PackEntry = current_pack.entries.get(id=pick)
+        except PackEntry.DoesNotExist:
             return False
-        if settings.ENABLE_NEW_DRAFT_MODELS:
-            try:
-                current_pack: Pack = current_pack
-                selected_card: PackEntry = current_pack.entries.get(card_id=card_id)
-            except DraftEntry.DoesNotExist:
-                return False
 
-            # Take the card out of its pack and place is in this seat's pool
-            self.picks.create(printing=selected_card.printing)
-            selected_card.delete()
-            # Now, move the pack and increment the pick number
-            if self.draft.current_round % 2 == 1:  # Odd rounds pass left (inc)
-                current_pack.seat = self.seat_to_the_left()
-            else:  # Even rounds pass right (decrement seat number)
-                current_pack.seat = self.seat_to_the_right()
-            # Save any relevant models
-            current_pack.save()
-        else:
-            try:
-                current_pack: DraftPack = current_pack
-                selected_card: DraftCard = current_pack.cards.get(uuid=card_id)
-            except DraftCard.DoesNotExist:
-                return False
+        # Take the card out of its pack and place is in this seat's pool
+        self.picks.create(printing=selected_card.printing)
+        selected_card.delete()
+        # Now, move the pack and increment the pick number
+        if self.draft.current_round % 2 == 1:  # Odd rounds pass left (inc)
+            current_pack.seat = self.seat_to_the_left()
+        else:  # Even rounds pass right (decrement seat number)
+            current_pack.seat = self.seat_to_the_right()
+        current_pack.pick = current_pack.pick + 1
+        # Save any relevant models
+        current_pack.save()
 
-            # Take the card out of its pack and place is in this seat's pool
-            selected_card.pack = None
-            selected_card.seat = self
-
-            # Now, move the pack and increment the pick number
-            if self.draft.current_round % 2 == 1:  # Odd rounds pass left (inc)
-                current_pack.seat_number = (current_pack.seat_number + 1) % self.draft.max_players
-            else:  # Even rounds pass right (decrement seat number)
-                current_pack.seat_number = (current_pack.seat_number - 1) % self.draft.max_players
-            current_pack.pick_number += 1
-
-            # Save any relevant models
-            selected_card.save()
-            current_pack.save()
         return True
 
     def seat_to_the_left(self) -> 'DraftSeat':
@@ -216,55 +187,6 @@ class DraftSeat(models.Model):
     def seat_to_the_right(self) -> 'DraftSeat':
         position = (self.position - 1) % self.draft.max_players
         return self.draft.seats.get(position=position)
-
-
-class DraftPack(models.Model):
-    """
-    Deprecated
-    """
-    draft = models.ForeignKey(Draft, on_delete=models.CASCADE, related_name='packs')
-    round_number = models.IntegerField()
-    pick_number = models.IntegerField(default=1)
-    seat_number = models.IntegerField()
-
-
-class DraftCard(models.Model):
-    """
-    Deprecated
-    """
-    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    pack = models.ForeignKey(DraftPack, null=True, on_delete=models.CASCADE, related_name='cards')
-    seat = models.ForeignKey(DraftSeat, null=True, default=None, on_delete=models.CASCADE, related_name='draft_cards')
-    card = models.ForeignKey(Card, on_delete=models.SET_NULL, null=True)
-    printing = models.ForeignKey(Printing, on_delete=models.SET_NULL, null=True)
-
-    card_name = models.CharField(max_length=20, null=True, default=None)
-    card_uuid = models.UUIDField(null=True, default=None)
-
-    def get_image_url(self):
-        if self.card is None:
-            if self.card_uuid is None:
-                return None
-            self.card = Card.objects.get(id=self.card_uuid)
-            self.save()
-        if self.printing is None:
-            self.printing = self.card.printings.first()
-            self.save()
-        return self.printing.image_url
-
-    def display_name(self):
-        if self.printing is not None:
-            return self.printing.printing.name
-        if self.card is not None:
-            return self.card.name
-        if self.card_name is not None:
-            return self.card_name
-        if self.card_uuid is not None:
-            self.card = Card.objects.get(id=self.card_uuid)
-            self.printing = self.card.printings.first()
-            self.save()
-            return self.card.name
-        return 'None'
 
 
 class Pack(models.Model):
