@@ -2,6 +2,7 @@ import uuid
 from random import shuffle
 from typing import List
 
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import models
 
@@ -34,7 +35,7 @@ class Cube(models.Model):
                 printing = Card.objects.get_or_fetch_printing_for_name(card_name)
             else:
                 printing = Card.objects.get_or_create_printing_for_name(card_name)
-            self.entries.create(card=printing, count=1)
+            self.entries.create(printing=printing, count=1)
 
     def calculate_size(self) -> int:
         return sum(self.entries.values_list('count', flat=True))
@@ -50,9 +51,13 @@ class Cube(models.Model):
         if total_requested_cards > cube_size:
             raise CubeNotLargeEnoughException()
         card_pool = []
+        entry: CubeEntry
         for entry in self.entries.all():
             for _ in range(entry.count):
-                card_pool.append(entry.card.card.id)
+                if settings.ENABLE_NEW_DRAFT_MODELS:
+                    card_pool.append(entry.printing.id)
+                else:
+                    card_pool.append(entry.printing.card.id)
         shuffle(card_pool)
         for _ in range(pack_count):
             pack = []
@@ -64,8 +69,12 @@ class Cube(models.Model):
 
 class CubeEntry(models.Model):
     cube = models.ForeignKey(Cube, related_name='entries', on_delete=models.CASCADE)
-    card = models.ForeignKey(Printing, related_name='+', on_delete=models.CASCADE)
+    printing = models.ForeignKey(Printing, related_name='+', on_delete=models.CASCADE)
     count = models.IntegerField(default=1)
 
+    @property
+    def card(self):
+        return self.printing
+
     def get_card_name(self):
-        return self.card.card.name
+        return self.printing.card.name

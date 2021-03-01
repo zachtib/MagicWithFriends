@@ -1,8 +1,11 @@
-from django.contrib.auth.models import User
-from django.test import TestCase
+from uuid import UUID
 
+from django.contrib.auth.models import User
+from django.test import TestCase, override_settings
+
+from cards.models import Card, Printing, MagicSet
 from cubes.models import Cube
-from drafts.models import Draft, DraftSeat, DraftEntry, DraftPack, DraftCard
+from drafts.models import Draft, DraftSeat, DraftEntry, DraftPack, DraftCard, Pack, PackEntry, DraftPick
 
 
 class DraftCreationTestCase(TestCase):
@@ -253,3 +256,86 @@ class BotDraftTestCase(TestCase):
 
         owner_seat = self.draft.get_seat_for_user(self.owner)
         self.assertEqual(4, owner_seat.get_pack_count())
+
+
+@override_settings(ENABLE_NEW_DRAFT_MODELS=True)
+class NewDraftModelsTestCase(TestCase):
+
+    def setUp(self) -> None:
+        self.card = Card.objects.create(
+            id=UUID('3778754e-23a3-4282-8706-0532766fc0d1'),
+            name='Lorem Ipsum',
+            mana_cost='{3}{W}{W}',
+        )
+        self.magic_set = MagicSet.objects.create(
+            id=UUID('f97b410c-4f11-4165-9982-a20307c6df63'),
+            code='test',
+            name='The Test Set',
+        )
+        self.printing = Printing.objects.create(
+            card=self.card,
+            magic_set=self.magic_set,
+            image_url='https://example.com/image.png',
+        )
+        self.draft = Draft.objects.create(
+            name='Test Draft',
+            current_round=1,
+            max_players=4
+        )
+        self.seat_0 = DraftSeat.objects.create(
+            draft=self.draft,
+            position=0,
+            user=None,
+        )
+        self.seat_1 = DraftSeat.objects.create(
+            draft=self.draft,
+            position=1,
+            user=None,
+        )
+        self.seat_2 = DraftSeat.objects.create(
+            draft=self.draft,
+            position=2,
+            user=None,
+        )
+        self.seat_3 = DraftSeat.objects.create(
+            draft=self.draft,
+            position=3,
+            user=None,
+        )
+        self.pack = Pack.objects.create(seat=self.seat_1, round=1)
+        self.entry = PackEntry.objects.create(pack=self.pack, printing=self.printing)
+        self.pick = DraftPick.objects.create(seat=self.seat_0, printing=self.printing)
+
+    def test_left(self):
+        seat = self.seat_1.seat_to_the_left()
+        self.assertEqual(self.seat_2.id, seat.id)
+
+    def test_left_again(self):
+        seat = self.seat_0.seat_to_the_left()
+        self.assertEqual(self.seat_1.id, seat.id)
+
+    def test_right(self):
+        seat = self.seat_1.seat_to_the_right()
+        self.assertEqual(self.seat_0.id, seat.id)
+
+    def test_pack_get_draft(self):
+        draft_id = self.pack.draft.id
+        self.assertEqual(self.draft.id, draft_id)
+
+    def test_entry_name(self):
+        self.assertEqual('Lorem Ipsum', self.entry.name)
+
+    def test_entry_image_url(self):
+        self.assertEqual('https://example.com/image.png', self.entry.image_url)
+
+    def test_entry_card(self):
+        self.assertEqual(self.card.id, self.entry.card.id)
+
+    def test_pick_name(self):
+        self.assertEqual('Lorem Ipsum', self.pick.card_name)
+
+    def test_pick_image_url(self):
+        self.assertEqual('https://example.com/image.png', self.pick.image_url)
+
+    def test_pick_card(self):
+        self.assertEqual(self.card.id, self.pick.card.id)

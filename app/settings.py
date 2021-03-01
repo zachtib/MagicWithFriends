@@ -211,9 +211,12 @@ ACCOUNT_EMAIL_VERIFICATION = 'none'
 
 LOGIN_REDIRECT_URL = 'dashboard'
 
+ENABLE_NEW_DRAFT_MODELS = False
+
 try:
     if 'CI' not in os.environ:
         import django_on_heroku
+
         django_on_heroku.settings(locals())
 except ImportError:
     print('django_on_heroku not found')

@@ -2,6 +2,7 @@ import random
 import uuid
 from typing import Optional, List
 
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import models
 
@@ -55,11 +56,17 @@ class Draft(models.Model):
             packs_needed = self.cube.default_pack_count * len(players)
             packs = self.cube.generate_packs(pack_count=packs_needed)
             for seat in self.seats.all():
-                for i in range(1, self.cube.default_pack_count + 1):
+                round_no: int
+                for round_no in range(1, self.cube.default_pack_count + 1):
                     card_ids = packs.pop()
-                    pack = DraftPack.objects.create(draft=self, round_number=i, seat_number=seat.position)
-                    for card_id in card_ids:
-                        DraftCard.objects.create(pack=pack, card_uuid=card_id)
+                    if settings.ENABLE_NEW_DRAFT_MODELS:
+                        pack = Pack.objects.create(seat=seat, round=round_no)
+                        entries = [PackEntry(printing_id) for printing_id in card_ids]
+                        pack.entries.bulk_create(entries)
+                    else:
+                        pack = DraftPack.objects.create(draft=self, round_number=round_no, seat_number=seat.position)
+                        for card_id in card_ids:
+                            DraftCard.objects.create(pack=pack, card_uuid=card_id)
 
         self.current_round = 1
         self.save()
@@ -224,7 +231,7 @@ class DraftCard(models.Model):
 
     def display_name(self):
         if self.printing is not None:
-            return self.printing.card.name
+            return self.printing.printing.name
         if self.card is not None:
             return self.card.name
         if self.card_name is not None:
@@ -259,13 +266,21 @@ class PackEntry(models.Model):
     def image_url(self) -> str:
         return self.printing.image_url
 
+    @property
+    def card(self) -> Card:
+        """
+        Convenience getter for self.printing.card
+        :return: [Card] instance
+        """
+        return self.printing.card
+
 
 class DraftPick(models.Model):
     seat = models.ForeignKey(DraftSeat, on_delete=models.CASCADE, related_name='picks')
     printing = models.ForeignKey(Printing, on_delete=models.CASCADE)
 
     @property
-    def name(self) -> str:
+    def card_name(self) -> str:
         return self.printing.card.name
 
     @property
