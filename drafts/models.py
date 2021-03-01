@@ -89,9 +89,12 @@ class Draft(models.Model):
         self.check_end_of_round()
 
     def check_end_of_round(self):
-        for pack in self.packs.filter(round_number=self.current_round):
-            if pack.cards.count() > 0:
-                return False
+        seat: DraftSeat
+        for seat in self.seats.prefetch_related('packs'):
+            pack: Pack
+            for pack in seat.packs.filter(round=self.current_round):
+                if pack.entries.count() > 0:
+                    return False
         self.current_round += 1
         self.save()
         return True
