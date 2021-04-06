@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+    <h2>Inspection for {{ cube_name }}</h2>
+
+    <h3>Duplicates</h3>
+    <div class="row">
+        {% if has_duplicates %}
+            <ul>
+                {% for duplicate in duplicates %}
+                    <li>{{ duplicate }}</li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>No duplicate cards found</p>
+        {% endif %}
+    </div>
+
+    {% if show_missing %}
+        <h3>Missing cards:</h3>
+        <div class="row">
+            {% for item in missing %}
+                <div class="col-6">
+                    <p>{{ item.name }}</p>
+                    <img src="{{ item.image_uris.normal }}">
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endblock %}

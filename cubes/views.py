@@ -1,3 +1,5 @@
+from typing import List
+
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 
@@ -49,4 +51,20 @@ def cube_bulk_update(request, cube_id):
     return render(request, 'cubes/update.html', {
         'cube': cube,
         'form': form,
+    })
+
+
+def cobra_set_inspection(request, cube_id, set_id=None):
+    from .cube_inspect import inspect_cubecobra_set_cube
+    if set_id is None:
+        set_ids = []
+    else:
+        set_ids: List[str] = set_id.split('+')
+    results = inspect_cubecobra_set_cube(cube_id, set_ids)
+    return render(request, 'cubes/set_inspection.html', {
+        'cube_name': results.cube_id,
+        'has_duplicates': len(results.duplicates) > 0,
+        'duplicates': results.duplicates,
+        'show_missing': len(results.set_ids) > 0,
+        'missing': results.not_present
     })
