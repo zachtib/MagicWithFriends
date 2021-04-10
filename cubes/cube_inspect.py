@@ -1,5 +1,7 @@
+import csv
 import sys
 from dataclasses import dataclass
+from io import StringIO
 from typing import List
 
 import requests
@@ -68,6 +70,21 @@ def describe_results(results: InspectionResults) -> str:
         lines.append('Not in cube:')
         for card in results.not_present:
             lines.append(f'  {card.name}')
+
+    return '\n'.join(lines)
+
+
+def cubecobra_to_untap(cube_id: str) -> str:
+    result = requests.get(f'https://cubecobra.com/cube/download/csv/{cube_id}')
+    if result.status_code != 200:
+        raise RuntimeError()
+    f = StringIO(result.text)
+    reader = csv.DictReader(f, delimiter=',')
+    lines = []
+    for row in reader:
+        name = row['Name']
+        set_code = row['Set'].lower()
+        lines.append(f'1 {name} ({set_code})')
 
     return '\n'.join(lines)
 

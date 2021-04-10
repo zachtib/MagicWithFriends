@@ -8,6 +8,7 @@ urlpatterns = [
         path('create-draft', views.cube_create_draft, name='cube-create-draft'),
         path('', views.cube_detail, name='cube-detail'),
     ])),
+    path('untap/<str:cube_id>', views.cobra_untap_export),
     path('inspect/<str:cube_id>', views.cobra_set_inspection),
     path('inspect/<str:cube_id>/<str:set_id>', views.cobra_set_inspection),
     path('', views.cube_list, name='cube-list'),

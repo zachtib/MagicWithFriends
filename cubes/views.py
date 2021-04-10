@@ -1,5 +1,6 @@
 from typing import List
 
+from django.http import HttpResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 
@@ -68,3 +69,9 @@ def cobra_set_inspection(request, cube_id, set_id=None):
         'show_missing': len(results.set_ids) > 0,
         'missing': results.not_present
     })
+
+
+def cobra_untap_export(request, cube_id):
+    from .cube_inspect import cubecobra_to_untap
+    result = cubecobra_to_untap(cube_id)
+    return HttpResponse(result, content_type='text/plain')
