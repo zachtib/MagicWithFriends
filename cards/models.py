@@ -1,9 +1,42 @@
 import uuid
 
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 
 from scryfall.client import ScryfallClient
 from scryfall.models import ScryfallCard
+
+
+class Color(models.TextChoices):
+    WHITE = 'W', _('White')
+    BLUE = 'U', _('Blue')
+    BLACK = 'B', _('Black')
+    RED = 'R', _('Red')
+    GREEN = 'G', _('Green')
+    COLORLESS = 'C', _('Colorless')
+
+
+class ColorPair(models.TextChoices):
+    WU = 'WU', _('White / Blue')
+    UB = 'UB', _('Blue / Black')
+    BR = 'BR', _('Black / Red')
+    RG = 'RG', _('Red / Green')
+    GW = 'GW', _('Green / White')
+    WB = 'WB', _('White / Black')
+    BG = 'BG', _('Black / Green')
+    GU = 'GU', _('Green / Blue')
+    UR = 'UR', _('Blue / Red')
+    RW = 'RW', _('Red / White')
+
+
+class Type(models.TextChoices):
+    CREATURE = 'C', _('Creature')
+    PLANESWALKER = 'P', _('Planeswalker')
+    SORCERY = 'S', _('Sorcery')
+    INSTANT = 'I', _('Instant')
+    ARTIFACT = 'A', _('Artifact')
+    ENCHANTMENT = 'E', _('Enchantment')
+    LAND = 'L', _('Land')
 
 
 class CardManager(models.Manager):

@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'channels',
 
     'cards',
+    'cmdrjump',
     'cubes',
     'dashboard',
     'drafts',
