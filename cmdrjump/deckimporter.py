@@ -26,8 +26,21 @@ def determine_colors_from_manacost(cost):
 
 
 def determine_category_from_card(card: Card):
-    # TODO
-    return Type.CREATURE
+    if 'Creature' in card.type_line:
+        return Type.CREATURE
+    elif 'Land' in card.type_line:
+        return Type.LAND
+    elif 'Planeswalker' in card.type_line:
+        return Type.PLANESWALKER
+    elif 'Sorcery' in card.type_line:
+        return Type.SORCERY
+    elif 'Instant' in card.type_line:
+        return Type.INSTANT
+    elif 'Artifact' in card.type_line:
+        return Type.ARTIFACT
+    elif 'Enchantment' in card.type_line:
+        return Type.ENCHANTMENT
+    return Type.UNKNOWN
 
 
 def colorpair_from_set(colors):

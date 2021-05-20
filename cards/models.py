@@ -1,4 +1,5 @@
 import uuid
+from typing import Optional, List
 
 from django.db import models, transaction
 from django.utils.translation import gettext_lazy as _
@@ -37,6 +38,13 @@ class Type(models.TextChoices):
     ARTIFACT = 'A', _('Artifact')
     ENCHANTMENT = 'E', _('Enchantment')
     LAND = 'L', _('Land')
+    UNKNOWN = 'U', _('Unknown')
+
+
+def color_string_from_colors(colors: Optional[List[str]]) -> str:
+    if colors is None:
+        return ''
+    return ''.join(colors)[:5]
 
 
 class CardManager(models.Manager):
@@ -54,30 +62,49 @@ class CardManager(models.Manager):
         )
         return card_face
 
-    def from_scryfall_card(self, scryfall_card: ScryfallCard) -> 'Card':
+    def from_scryfall_card(self, scryfall_card: ScryfallCard, card: Optional['Card'] = None) -> 'Card':
+        card = card or Card(id=scryfall_card.id)
         is_dfc = scryfall_card.card_faces is not None and len(scryfall_card.card_faces) > 1
-        new_card = Card(id=scryfall_card.id, name=scryfall_card.name)
-        faces = []
-        if is_dfc:
+
+        card.layout = scryfall_card.layout
+        card.name = scryfall_card.name
+        card.type_line = scryfall_card.type_line
+        card.color_indicator = color_string_from_colors(scryfall_card.color_indicator)
+        card.loyalty = scryfall_card.loyalty
+        card.power = scryfall_card.power
+        card.toughness = scryfall_card.toughness
+        card.oracle_text = scryfall_card.oracle_text
+
+        if scryfall_card.mana_cost is not None:
+            card.mana_cost = scryfall_card.mana_cost
+        elif is_dfc:
             mana_costs = []
-            for index, face in enumerate(scryfall_card.card_faces):
+            for face in scryfall_card.card_faces:
                 if face.mana_cost is not None and face.mana_cost != '':
                     mana_costs.append(face.mana_cost)
-                faces.append(self.from_scryfall_cardface(new_card, index, face))
-            new_card.mana_cost = ' // '.join(mana_costs)
-        else:
-            new_card.mana_cost = scryfall_card.mana_cost
+            card.mana_cost = ' // '.join(mana_costs)
+
+        faces = []
+        if is_dfc:
+            if card.faces.count() > 0:
+                card.faces.all().delete()
+            for index, face in enumerate(scryfall_card.card_faces):
+                faces.append(self.from_scryfall_cardface(card, index, face))
+
         with transaction.atomic():
-            new_card.save()
+            card.save()
             if is_dfc:
                 for face in faces:
                     face.save()
-        return new_card
+        return card
 
     def get_or_fetch_printing_for_name(self, name: str):
         queryset = self.get_queryset()
         try:
             card = queryset.get(name__iexact=name)
+            if card.should_update():
+                scryfall_card = self.scryfall.get_card_by_name_fuzzy(name)
+                card = self.from_scryfall_card(scryfall_card, card)
             printing = card.printings.first()
             if printing is not None:
                 return printing
@@ -133,8 +160,20 @@ class CardManager(models.Manager):
 
 class Card(models.Model):
     id = models.UUIDField(primary_key=True)
+    layout = models.CharField(max_length=20)
     name = models.CharField(max_length=200)
-    mana_cost = models.CharField(max_length=20, blank=True, null=True)
+    mana_cost = models.CharField(max_length=20, null=True, blank=True)
+    type_line = models.CharField(max_length=200)
+    color_indicator = models.CharField(max_length=5, null=True, blank=True)
+    loyalty = models.CharField(max_length=5, null=True, blank=True)
+    oracle_text = models.TextField(blank=True, null=True)
+    power = models.CharField(max_length=5, null=True, blank=True)
+    toughness = models.CharField(max_length=5, null=True, blank=True)
+
+    def should_update(self) -> bool:
+        if self.type_line == '':
+            return True
+        return False
 
     objects = CardManager()
 
@@ -161,6 +200,10 @@ class CardFace(models.Model):
     index = models.IntegerField(default=0)
     name = models.CharField(max_length=200)
     mana_cost = models.CharField(max_length=20, blank=True, null=True)
+    type_line = models.CharField(max_length=200, blank=True, default='')
+
+    def __str__(self):
+        return self.name
 
 
 class Printing(models.Model):
