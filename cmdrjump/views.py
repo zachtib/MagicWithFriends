@@ -1,5 +1,6 @@
 import random
 
+from django.http import Http404
 from django.shortcuts import render, get_object_or_404
 from django.urls import reverse
 
@@ -76,10 +77,13 @@ def make_second_selection(request, cmdr):
 
 
 def result(request, cmdr_1, cmdr_2):
-    first_selection: CommanderJumpstartDeck = get_object_or_404(CommanderJumpstartDeck, slug=cmdr_1)
-    second_selection: CommanderJumpstartDeck = get_object_or_404(CommanderJumpstartDeck, slug=cmdr_2)
-    colors = colorpair_from_set({first_selection.color, second_selection.color})
-    pair_deck: DualColoredDeck = get_object_or_404(DualColoredDeck, colors=colors)
+    try:
+        first_selection = CommanderJumpstartDeck.objects.prefetch_related('cards__card').get(slug=cmdr_1)
+        second_selection = CommanderJumpstartDeck.objects.prefetch_related('cards__card').get(slug=cmdr_2)
+        colors = colorpair_from_set({first_selection.color, second_selection.color})
+        pair_deck = DualColoredDeck.objects.prefetch_related('cards__card').get(colors=colors)
+    except (CommanderJumpstartDeck.DoesNotExist, DualColoredDeck.DoesNotExist):
+        raise Http404()
 
     commanders = [first_selection.commander, second_selection.commander]
 
