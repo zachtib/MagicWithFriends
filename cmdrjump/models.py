@@ -22,6 +22,7 @@ class CommanderJumpstartEntry(models.Model):
     deck = models.ForeignKey(CommanderJumpstartDeck, on_delete=models.CASCADE, related_name='cards')
     card = models.ForeignKey(Card, on_delete=models.CASCADE, related_name='+')
     category = models.CharField(max_length=1, choices=Type.choices)
+    count = models.IntegerField(default=1)
 
 
 class DualColoredDeck(models.Model):
