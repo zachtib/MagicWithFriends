@@ -149,8 +149,10 @@ class CardManagerScryfallTestCase(TestCase):
 
     def test_fetching_when_card_and_printing_exist(self):
         card = card_named("Austere Command")
+        card.type_line = 'Sorcery'
+        card.save()
         magic_set = set_code('test')
-        Printing.objects.create(card=card, magic_set=magic_set)
+        Printing.objects.create(card=card, magic_set=magic_set, image_url='')
         with responses.RequestsMock():
             printing = Card.objects.get_or_fetch_printing_for_name("Austere Command")
         self.assertEqual(card.id, printing.card_id)

@@ -118,7 +118,7 @@ class CardManager(models.Manager):
                         if face.image_uris is not None:
                             printing.image_url = face.image_uris.normal
                             printing.save()
-                    return printing
+                return printing
         except Card.DoesNotExist:
             card = None
         #  Card doesn't exist in our database, let's fetch it
