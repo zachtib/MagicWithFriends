@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+    <h3>Commanders</h3>
+    {% for commander in commanders %}
+        <p>{{ commander.name }}</p>
+    {% endfor %}
+
+    {% for section, entries in deck_sections.items %}
+        <h3>{{ section }}</h3>
+        {% for item in entries %}
+            <p>{{ item.count }} {{ item.card }}</p>
+        {% endfor %}
+    {% endfor %}
+
+{% endblock %}

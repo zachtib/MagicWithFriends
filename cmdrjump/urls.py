@@ -3,7 +3,7 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    path('', views.start),
-    path('<int:deck_id>', views.second_selection),
-    path('<int:cid_1>/<int:cid_2>', views.result),
+    path('', views.start, name='cj-begin'),
+    path('<str:cmdr>', views.make_second_selection, name='cj-second-selection'),
+    path('<str:cmdr_1>/<str:cmdr_2>', views.result, name='cj-result'),
 ]

@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+    <p>{{ first_selection.commander.name }}</p>
+
+    {% for deck in options %}
+        <p><a href="{{ deck.url }}">{{ deck.name }}</a></p>
+    {% endfor %}
+
+{% endblock %}
