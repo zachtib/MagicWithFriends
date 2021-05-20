@@ -7,11 +7,33 @@
         <p>{{ commander.name }}</p>
     {% endfor %}
 
-    {% for section, entries in deck_sections.items %}
-        <h3>{{ section }}</h3>
-        {% for item in entries %}
-            <p>{{ item.count }} {{ item.card }}</p>
+    <div class="row">
+        {% for column in columns %}
+            <div class="col">
+                {% for section, entries in column.items %}
+                    <h3>{{ section }}</h3>
+                    <ul class="list-unstyled">
+                        {% for item in entries %}
+                            <li>{{ item.count }} {{ item.card }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endfor %}
+            </div>
         {% endfor %}
-    {% endfor %}
+    </div>
+
+    <h4>Copyable Decklist</h4>
+
+    <p class="font-monospace">
+        {% for commander in commanders %}
+            1 {{ commander.name }}<br>
+        {% endfor %}
+        {% for section, entries in deck_sections.items %}
+            {% for item in entries %}
+                {{ item.count }} {{ item.card }}<br>
+            {% endfor %}
+        {% endfor %}
+    </p>
+
 
 {% endblock %}

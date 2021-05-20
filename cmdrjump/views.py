@@ -116,7 +116,19 @@ def result(request, cmdr_1, cmdr_2):
             'card': item.card,
         })
 
+    column_count = 0
+    column_index = 0
+    columns = [{}]
+    for category, entries in deck_sections.items():
+        columns[column_index][category] = entries
+        column_count += sum(item['count'] for item in entries)
+        if column_count > 30:
+            column_index += 1
+            columns.append({})
+            column_count = 0
+
     return render(request, 'cmdrjump/results.html', {
         'commanders': commanders,
         'deck_sections': deck_sections,
+        'columns': columns,
     })

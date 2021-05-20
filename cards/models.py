@@ -99,22 +99,33 @@ class CardManager(models.Manager):
         return card
 
     def get_or_fetch_printing_for_name(self, name: str):
+        scryfall_card = None
         queryset = self.get_queryset()
         try:
             card = queryset.get(name__iexact=name)
             if card.should_update():
-                scryfall_card = self.scryfall.get_card_by_name_fuzzy(name)
+                scryfall_card = scryfall_card or self.scryfall.get_card_by_name_fuzzy(name)
                 card = self.from_scryfall_card(scryfall_card, card)
             printing = card.printings.first()
             if printing is not None:
-                return printing
+                if 'ec8e4142' in printing.image_url:
+                    scryfall_card = scryfall_card or self.scryfall.get_card_by_name_fuzzy(name)
+                    if scryfall_card.image_uris is not None:
+                        printing.image_url = scryfall_card.image_uris.normal
+                        printing.save()
+                    elif scryfall_card.card_faces is not None and len(scryfall_card.card_faces) > 1:
+                        face = scryfall_card.card_faces[0]
+                        if face.image_uris is not None:
+                            printing.image_url = face.image_uris.normal
+                            printing.save()
+                    return printing
         except Card.DoesNotExist:
             card = None
         #  Card doesn't exist in our database, let's fetch it
         #  Handle DFCs
         if '/' in name:
             name, _ = name.split('/', maxsplit=1)
-        scryfall_card = self.scryfall.get_card_by_name_fuzzy(name)
+        scryfall_card = scryfall_card or self.scryfall.get_card_by_name_fuzzy(name)
         if card is None:
             card = self.from_scryfall_card(scryfall_card)
         s = scryfall_card.set_uri
@@ -131,6 +142,8 @@ class CardManager(models.Manager):
                 image_url = face.image_uris.normal
             else:
                 raise Exception(f'Could not find a card image for {scryfall_card}')
+        else:
+            raise Exception(f'Could not find a card image for {scryfall_card}')
 
         printing = Printing.objects.create(
             magic_set=magic_set,
