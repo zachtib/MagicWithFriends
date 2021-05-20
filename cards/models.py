@@ -85,7 +85,8 @@ class CardManager(models.Manager):
             card = None
         #  Card doesn't exist in our database, let's fetch it
         #  Handle DFCs
-        name, _ = name.split('/', maxsplit=1)
+        if '/' in name:
+            name, _ = name.split('/', maxsplit=1)
         scryfall_card = self.scryfall.get_card_by_name_fuzzy(name)
         if card is None:
             card = self.from_scryfall_card(scryfall_card)
