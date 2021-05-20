@@ -96,11 +96,15 @@ class CardManager(models.Manager):
             'name': scryfall_card.set_name,
             'id': set_id,
         })
-        if scryfall_card.card_faces is not None and len(scryfall_card.card_faces) > 1:
-            face = scryfall_card.card_faces[0]
-            image_url = face.image_uris.normal
-        else:
+        if scryfall_card.image_uris is not None:
             image_url = scryfall_card.image_uris.normal
+        elif scryfall_card.card_faces is not None and len(scryfall_card.card_faces) > 1:
+            face = scryfall_card.card_faces[0]
+            if face.image_uris is not None:
+                image_url = face.image_uris.normal
+            else:
+                raise Exception(f'Could not find a card image for {scryfall_card}')
+
         printing = Printing.objects.create(
             magic_set=magic_set,
             card=card,

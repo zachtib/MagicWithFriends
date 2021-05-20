@@ -12,6 +12,9 @@ class CommanderJumpstartDeck(models.Model):
     commander = models.ForeignKey(Card, on_delete=models.CASCADE)
     slug = models.SlugField(unique=True)
 
+    def __str__(self):
+        return self.commander.name
+
     def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
         if not self.id:
             self.slug = slugify(self.commander.name)[:50]
