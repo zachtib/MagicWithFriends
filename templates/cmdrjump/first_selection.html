@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+    <div class="row">
+        {% for deck in options %}
+            <div class="col">
+                <img src="{{ deck.image_url }}" class="img-responsive" width="90%" alt=""/>
+                <p>{{ deck.name }}</p>
+                <a class="btn btn-primary" href="{{ deck.url }}">Select</a>
+            </div>
+        {% endfor %}
+    </div>
+
+
+
+{% endblock %}

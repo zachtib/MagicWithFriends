@@ -32,6 +32,7 @@ class ScryfallImages:
 class ScryfallCardFace:
     name: str
     type_line: str
+    color_indicator: List[str] = field(default_factory=list)
     colors: List[str] = field(default_factory=list)
     loyalty: Optional[str] = None
     mana_cost: Optional[str] = None
@@ -56,6 +57,7 @@ class ScryfallCard:
     set_name: str
     set_uri: str
     card_faces: List[ScryfallCardFace] = field(default_factory=list)
+    color_identity: List[str] = field(default_factory=list)
     color_indicator: List[str] = field(default_factory=list)
     loyalty: Optional[str] = None
     mana_cost: Optional[str] = None

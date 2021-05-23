@@ -50,6 +50,7 @@ class ScryfallClient(object):
         return self.fetch_many(ScryfallSet, '/sets')
 
     def get_card_by_name_fuzzy(self, name: str) -> ScryfallCard:
+        name = name.strip(' ')
         name = name.replace(' ', '+').lower()
         return self.fetch_one(ScryfallCard, f'/cards/named?fuzzy={name}')
 
