@@ -176,7 +176,7 @@ class Card(models.Model):
     id = models.UUIDField(primary_key=True)
     layout = models.CharField(max_length=20, default='normal')
     name = models.CharField(max_length=200)
-    mana_cost = models.CharField(max_length=20, null=True, blank=True)
+    mana_cost = models.CharField(max_length=30, null=True, blank=True)
     type_line = models.CharField(max_length=200)
     color_indicator = models.CharField(max_length=5, null=True, blank=True)
     loyalty = models.CharField(max_length=5, null=True, blank=True)
@@ -213,7 +213,7 @@ class CardFace(models.Model):
     card = models.ForeignKey(Card, related_name='faces', on_delete=models.CASCADE)
     index = models.IntegerField(default=0)
     name = models.CharField(max_length=200)
-    mana_cost = models.CharField(max_length=20, blank=True, null=True)
+    mana_cost = models.CharField(max_length=30, blank=True, null=True)
     type_line = models.CharField(max_length=200, blank=True, default='')
 
     def __str__(self):
