@@ -108,7 +108,8 @@ class CardManager(models.Manager):
                 card = self.from_scryfall_card(scryfall_card, card)
             printing = card.printings.first()
             if printing is not None:
-                if 'ec8e4142' in printing.image_url:
+                if 'ec8e4142' in printing.image_url and card.name != 'Totally Lost':
+                    # Special case for the Totally Lost art
                     scryfall_card = scryfall_card or self.scryfall.get_card_by_name_fuzzy(name)
                     if scryfall_card.image_uris is not None:
                         printing.image_url = scryfall_card.image_uris.normal

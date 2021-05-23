@@ -26,10 +26,10 @@ def determine_colors_from_manacost(cost):
 
 
 def determine_category_from_card(card: Card):
-    if 'Creature' in card.type_line:
-        return Type.CREATURE
-    elif 'Land' in card.type_line:
+    if 'Land' in card.type_line:
         return Type.LAND
+    elif 'Creature' in card.type_line:
+        return Type.CREATURE
     elif 'Planeswalker' in card.type_line:
         return Type.PLANESWALKER
     elif 'Sorcery' in card.type_line:
