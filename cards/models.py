@@ -174,7 +174,7 @@ class CardManager(models.Manager):
 
 class Card(models.Model):
     id = models.UUIDField(primary_key=True)
-    layout = models.CharField(max_length=20)
+    layout = models.CharField(max_length=20, default='normal')
     name = models.CharField(max_length=200)
     mana_cost = models.CharField(max_length=20, null=True, blank=True)
     type_line = models.CharField(max_length=200)

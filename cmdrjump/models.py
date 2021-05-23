@@ -5,10 +5,7 @@ from cards.models import Color, Card, Type, ColorPair
 
 
 class CommanderJumpstartDeck(models.Model):
-    color = models.CharField(
-        max_length=1,
-        choices=Color.choices,
-    )
+    color = models.CharField(max_length=1, choices=Color.choices)
     commander = models.ForeignKey(Card, on_delete=models.CASCADE)
     slug = models.SlugField(unique=True)
 

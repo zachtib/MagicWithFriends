@@ -41,7 +41,11 @@ def start(request):
 
 
 def make_second_selection(request, cmdr):
-    passed = [int(i) for i in request.GET.get('passed', '').split(',')]
+    passed_qs = request.GET.get('passed', None)
+    if passed_qs is not None:
+        passed = [int(i) for i in passed_qs.split(',')]
+    else:
+        passed = []
     first_selection: CommanderJumpstartDeck = get_object_or_404(CommanderJumpstartDeck, slug=cmdr)
 
     all_colors = [Color.WHITE, Color.BLUE, Color.BLACK, Color.RED, Color.GREEN]
