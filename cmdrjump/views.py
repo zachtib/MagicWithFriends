@@ -96,8 +96,12 @@ def result(request, cmdr_1, cmdr_2):
     for item in first_selection.cards.all():
         category = item.get_category_display()
         if category not in deck_sections.keys():
-            deck_sections[category] = []
-        deck_sections[category].append({
+            deck_sections[category] = {
+                'count': 0,
+                'entries': [],
+            }
+        deck_sections[category]['count'] += item.count
+        deck_sections[category]['entries'].append({
             'count': item.count,
             'card': item.card,
         })
@@ -105,8 +109,12 @@ def result(request, cmdr_1, cmdr_2):
     for item in second_selection.cards.all():
         category = item.get_category_display()
         if category not in deck_sections.keys():
-            deck_sections[category] = []
-        deck_sections[category].append({
+            deck_sections[category] = {
+                'count': 0,
+                'entries': [],
+            }
+        deck_sections[category]['count'] += item.count
+        deck_sections[category]['entries'].append({
             'count': item.count,
             'card': item.card,
         })
@@ -114,8 +122,12 @@ def result(request, cmdr_1, cmdr_2):
     for item in pair_deck.cards.all():
         category = item.get_category_display()
         if category not in deck_sections.keys():
-            deck_sections[category] = []
-        deck_sections[category].append({
+            deck_sections[category] = {
+                'count': 0,
+                'entries': [],
+            }
+        deck_sections[category]['count'] += 1
+        deck_sections[category]['entries'].append({
             'count': 1,
             'card': item.card,
         })
@@ -123,9 +135,9 @@ def result(request, cmdr_1, cmdr_2):
     column_count = 0
     column_index = 0
     columns = [{}]
-    for category, entries in deck_sections.items():
-        columns[column_index][category] = entries
-        column_count += sum(item['count'] for item in entries)
+    for category, details in deck_sections.items():
+        columns[column_index][f"{category} ({details['count']})"] = details['entries']
+        column_count += details['count']
         if column_count > 30:
             column_index += 1
             columns.append({})

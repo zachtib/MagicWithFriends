@@ -9,17 +9,6 @@ from cards.models import Card, Color, ColorPair, Type, MagicSet, Printing
 from cmdrjump.deckimporter import determine_colors_from_manacost, determine_category_from_card, colorpair_from_set, \
     process_decklist
 from cmdrjump.models import CommanderJumpstartDeck, DualColoredDeck, CommanderJumpstartEntry, DualColoredEntry
-import uuid
-from unittest.mock import patch
-
-import responses
-from django.test import Client, TestCase
-from parameterized import parameterized
-
-from cards.models import Card, Color, ColorPair, Type, MagicSet, Printing
-from cmdrjump.deckimporter import determine_colors_from_manacost, determine_category_from_card, colorpair_from_set, \
-    process_decklist
-from cmdrjump.models import CommanderJumpstartDeck, DualColoredDeck, CommanderJumpstartEntry, DualColoredEntry
 
 
 def create_mock_card_response(card_name, mana_cost, type_line):
@@ -291,14 +280,23 @@ class CommanderJumpstartViewsTestCase(TestCase):
 
         self.assertEqual(['Urza', 'Kamahl'], [item.name for item in response.context['commanders']])
         deck_sections = {
-            'Creature': [
-                {'count': 1, 'card': ch},
-            ],
-            'Artifact': [
-                {'count': 1, 'card': tg},
-            ],
-            'Instant': [
-                {'count': 1, 'card': ar},
-            ],
+            'Creature': {
+                'count': 1,
+                'entries': [
+                    {'count': 1, 'card': ch},
+                ],
+            },
+            'Artifact': {
+                'count': 1,
+                'entries': [
+                    {'count': 1, 'card': tg},
+                ],
+            },
+            'Instant': {
+                'count': 1,
+                'entries': [
+                    {'count': 1, 'card': ar},
+                ],
+            },
         }
         self.assertDictEqual(deck_sections, response.context['deck_sections'])

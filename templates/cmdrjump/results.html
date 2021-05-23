@@ -28,8 +28,8 @@
         {% for commander in commanders %}
             1 {{ commander.name }}<br>
         {% endfor %}
-        {% for section, entries in deck_sections.items %}
-            {% for item in entries %}
+        {% for section, details in deck_sections.items %}
+            {% for item in details.entries %}
                 {{ item.count }} {{ item.card }}<br>
             {% endfor %}
         {% endfor %}
