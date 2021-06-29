@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'cubes',
     'dashboard',
     'drafts',
+    'dungeons',
 ]
 
 try:
