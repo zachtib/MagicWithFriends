@@ -1,5 +1,6 @@
 from django.test import TestCase
 
+from dungeons.dungeonimporter import importdungeons
 from dungeons.models import Dungeon
 
 
@@ -15,3 +16,20 @@ class DungeonTestCase(TestCase):
         dungeon2 = Dungeon.objects.create(name="Tomb Of Horrors")
         self.assertNotEqual(dungeon1.slug, dungeon2.slug)
         self.assertEqual("tomb-of-horrors-1", dungeon2.slug)
+
+
+class OfficialDungeonTestCase(TestCase):
+
+    def setUp(self) -> None:
+        importdungeons()
+
+    def test_traversal(self):
+        dungeon = Dungeon.objects.get(name="Dungeon of the Mad Mage")
+        entrances = dungeon.entrances()
+
+        self.assertEqual(1, len(entrances))
+
+        room = entrances[0]
+        paths = room.paths.all()
+
+        self.assertEqual("Dungeon Level", paths[0].destination.name)

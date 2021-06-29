@@ -9,8 +9,11 @@ class Dungeon(models.Model):
     slug = models.SlugField(max_length=250, unique=True, db_index=True)
     is_official = models.BooleanField(default=False, editable=False)
 
+    def __str__(self):
+        return self.name
+
     def entrances(self) -> List["DungeonRoom"]:
-        return self.rooms.filter(is_entrance=True).list()
+        return list(self.rooms.filter(is_entrance=True))
 
     def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
         if self.slug != "":
@@ -44,6 +47,14 @@ class DungeonRoom(models.Model):
     is_entrance = models.BooleanField(default=False)
     is_exit = models.BooleanField(default=False)
     room_text = models.TextField()
+
+    def __str__(self):
+        return self.name
+
+    def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
+        if self.slug is None or self.slug == "":
+            self.slug = slugify(self.name)
+        super().save(force_insert, force_update, using, update_fields)
 
     class Meta:
         unique_together = [
