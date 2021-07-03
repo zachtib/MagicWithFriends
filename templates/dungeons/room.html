@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+
+{% block content %}
+    <div class="row">
+        <div class="col" style="text-align: center;">
+            <p class="heading-3">{{ dungeon }}</p>
+            <p class="display-2">{{ title }}</p>
+            <p class="lead my-5">{{ text }}</p>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        {% for choice in choices %}
+            <div class="col-12 col-md-4">
+                <div class="card my-2">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ choice.title }}</h5>
+                        <p class="card-text">{{ choice.text }}</p>
+                        <a href="{{ choice.url }}" class="card-link">Go</a>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+{% endblock %}

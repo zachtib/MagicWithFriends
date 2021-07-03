@@ -1,6 +1,7 @@
 from typing import List
 
 from django.db import models
+from django.urls import reverse
 from django.utils.text import slugify
 
 
@@ -11,6 +12,9 @@ class Dungeon(models.Model):
 
     def __str__(self):
         return self.name
+
+    def get_absolute_url(self):
+        return reverse('dungeon-entrance', args=[self.slug])
 
     def entrances(self) -> List["DungeonRoom"]:
         return list(self.rooms.filter(is_entrance=True))
@@ -50,6 +54,9 @@ class DungeonRoom(models.Model):
 
     def __str__(self):
         return self.name
+
+    def get_absolute_url(self):
+        return reverse('dungeon-room', args=[self.dungeon.slug, self.slug])
 
     def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
         if self.slug is None or self.slug == "":

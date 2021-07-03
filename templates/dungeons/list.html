@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+
+{% block content %}
+
+    <ul>
+        {% for dungeon in completed_dungeons %}
+            <li>
+                <i class="bi bi-check"></i>
+                {% if dungeon.is_official %}
+                    <i class="bi bi-award"></i>
+                {% endif %}
+                <a href="{{ dungeon.get_absolute_url }}">{{ dungeon }}</a>
+            </li>
+        {% endfor %}
+        {% for dungeon in official_dungeons %}
+            <li>
+                <i class="bi bi-award"></i>
+                <a href="{{ dungeon.get_absolute_url }}">{{ dungeon }}</a>
+            </li>
+        {% endfor %}
+        {% for dungeon in dungeons %}
+            <li>
+                <i class="bi bi-award"></i>
+                <a href="{{ dungeon.get_absolute_url }}">{{ dungeon }}</a>
+            </li>
+        {% endfor %}
+    </ul>
+
+    <p><a href="{% url "clear-completed" %}">Reset completed dungeons</a></p>
+
+{% endblock %}

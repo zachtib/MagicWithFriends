@@ -38,7 +38,7 @@
         ]
       },
       "5": {
-        "name": "Lost Leve",
+        "name": "Lost Level",
         "text": "Scry 2.",
         "paths": [
           "6",
@@ -63,12 +63,118 @@
         "name": "Deep Mines",
         "text": "Scry 3.",
         "paths": [
-          "8"
+          "9"
         ]
       },
       "9": {
         "name": "Mad Wizard’s Lair",
         "text": "Draw three cards and reveal them. You may cast one of them without paying its mana cost.",
+        "paths": []
+      }
+    }
+  },
+  {
+    "name": "Lost Mine of Phandelver",
+    "entrances": [
+      "1"
+    ],
+    "exits": [
+      "7"
+    ],
+    "rooms": {
+      "1": {
+        "name": "Cave Entrance",
+        "text": "Scry 1.",
+        "paths": [
+          "2",
+          "3"
+        ]
+      },
+      "2": {
+        "name": "Goblin Lair",
+        "text": "Create a 1/1 red Goblin creature token.",
+        "paths": [
+          "4",
+          "5"
+        ]
+      },
+      "3": {
+        "name": "Mine Tunnels",
+        "text": "Create a Treasure token.",
+        "paths": [
+          "5",
+          "6"
+        ]
+      },
+      "4": {
+        "name": "Storeroom",
+        "text": "Put a +1/+1 counter on target creature.",
+        "paths": [
+          "7"
+        ]
+      },
+      "5": {
+        "name": "Dark Pool",
+        "text": "Each opponent loses 1 life and you gain 1 life.",
+        "paths": [
+          "7"
+        ]
+      },
+      "6": {
+        "name": "Fungi Cavern",
+        "text": "Target creature gets -4/-0 until your next turn.",
+        "paths": [
+          "7"
+        ]
+      },
+      "7": {
+        "name": "Temple of Dumathoin",
+        "text": "Draw a card.",
+        "paths": []
+      }
+    }
+  },
+  {
+    "name": "Tomb of Annihilation",
+    "entrances": [
+      "1"
+    ],
+    "exits": [
+      "5"
+    ],
+    "rooms": {
+      "1": {
+        "name": "Trapped Entry",
+        "text": "Each player loses 1 life.",
+        "paths": [
+          "2",
+          "4"
+        ]
+      },
+      "2": {
+        "name": "Veils of Fear",
+        "text": "Each player loses 2 life unless they discard a card.",
+        "paths": [
+          "3"
+        ]
+      },
+      "3": {
+        "name": "Sandfall Cell",
+        "text": "Each player loses 2 life unless they sacrifice an artifact, a creature, or a land.",
+        "paths": [
+          "5"
+        ]
+      },
+      "4": {
+        "name": "Oubliette",
+        "text": "Discard a card and sacrifice an artifact, a creature, and a land.",
+        "paths": [
+          "5"
+        ]
+      },
+      "5": {
+        "name": "Cradle of the Death God",
+        "text": "Create The Atropal, a legendary 4/4 black God Horror creature token with deathtouch.",
         "paths": []
       }
     }
