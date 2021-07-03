@@ -23,6 +23,7 @@ urlpatterns = [
     path('cmdrjump/', include('cmdrjump.urls')),
     path('cubes/', include('cubes.urls')),
     path('drafts/', include('drafts.urls')),
+    path('dungeons/', include('dungeons.urls')),
     path('', include('dashboard.urls')),
 ]
 
