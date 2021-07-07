@@ -5,7 +5,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 
 from drafts.models import Draft
-from .forms import CubeBulkUpdateForm
+from .forms import CubeBulkUpdateForm, CubeInspectionForm
 from .models import Cube
 
 
@@ -75,3 +75,21 @@ def cobra_untap_export(request, cube_id):
     from .cube_inspect import cubecobra_to_untap
     result = cubecobra_to_untap(cube_id)
     return HttpResponse(result, content_type='text/plain')
+
+
+def cube_inspection(request):
+    if request.method == 'POST':
+        form = CubeInspectionForm(request.POST)
+        if form.is_valid():
+            cube_id = form.cleaned_data['cube_id']
+            set_ids = form.cleaned_data['set_ids']
+            if set_ids != '':
+                return redirect('inspect-cube-set', cube_id=cube_id, set_id=set_ids)
+            else:
+                return redirect('inspect-cube-results', cube_id=cube_id)
+    else:
+        form = CubeInspectionForm()
+
+    return render(request, 'cubes/inspect_form.html', {
+        'form': form,
+    })

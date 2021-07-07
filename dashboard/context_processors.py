@@ -19,5 +19,6 @@ def toolbar(request):
         "toolbar_items": [
             create_item("Commander JumpStart", "cj-begin"),
             create_item("Dungeons", "dungeon-list"),
+            create_item("Inspect Cube", "inspect-cube")
         ],
     }
