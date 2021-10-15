@@ -10,7 +10,10 @@ from .models import Cube
 
 
 def cube_list(request):
-    cubes = Cube.objects.filter(owner=request.user)
+    if request.user.is_anonymous:
+        cubes = []
+    else:
+        cubes = Cube.objects.filter(owner=request.user)
     return render(request, 'cubes/list.html', {
         'cubes': cubes,
     })
