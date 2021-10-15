@@ -84,7 +84,9 @@ def cubecobra_to_untap(cube_id: str) -> str:
     for row in reader:
         name = row['Name']
         set_code = row['Set'].lower()
-        lines.append(f'1 {name} ({set_code})')
+        maybeboard = row['Maybeboard'].lower() == 'true'
+        if not maybeboard:
+            lines.append(f'1 {name} ({set_code})')
 
     return '\n'.join(lines)
 
